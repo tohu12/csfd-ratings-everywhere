@@ -21,3 +21,6 @@ CLAUDE.local.md
 !.vscode/settings.json
 .idea
 .DS_Store
+
+# Playwright MCP session artefacts
+.playwright-mcp
