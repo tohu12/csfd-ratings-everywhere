@@ -17,7 +17,7 @@ After:   https://www.csfd.cz/film/1700849-coutures/prehled/ [65 %]
 - Detects ČSFD URLs in plain text and in existing links, including series → season → episode URLs (`/film/<series>/<episode>/`).
 - **Streaming sites:** on Netflix, Disney+, HBO Max and Apple TV, opening a film's or series' detail shows its ČSFD rating, found by title and year via ČSFD search. When the match is not certain, it shows **ČSFD ?** linking to the ČSFD search instead of guessing. Browse rows never trigger requests.
 - Two display modes: **badge** (default) or **hover card**, which inserts nothing into the page layout.
-- **Shows ratings right away:** cached ratings appear instantly; the first 10 distinct films on a page load automatically, any others when you hover a link (150 ms) or tab to it. 100 links to the same film = 1 request. Web pages cannot trigger extra requests.
+- **Shows ratings right away:** cached ratings appear instantly; the first 10 distinct films on a page load automatically, any others when you hover a link (150 ms) or tab to it. 100 links to the same film = 1 request. Web pages cannot trigger extra requests (on streaming sites a lookup needs your interaction with the page).
 - Polite to ČSFD:
   - cache (7 days),
   - max 2 parallel requests, 400 ms spacing, bounded queue,

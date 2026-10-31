@@ -12,7 +12,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 ## State
 | Area | State |
 |---|---|
-| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** Netflix, Disney+, HBO Max, Apple TV detail views → ČSFD search → rating. 418 unit tests at 100 % coverage, 12 Playwright E2E, size budgets. |
+| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** Netflix, Disney+, HBO Max, Apple TV detail views → ČSFD search → rating. 436 unit tests at 100 % coverage, 13 Playwright E2E, size budgets (VOD script 5.4 / 6 kB). Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. |
 | VOD real-world check | **Not done yet.** Detection verified on DOM captured 2026-10-31 from the owner's logged-in sessions (`tests/fixtures/pages/vod/`). The search parser is tested only on a **synthetic** ČSFD search page. Unknown: whether `/hledat/` requests pass Anubis like `/film/` ones. |
 | Real-world check | 2026-10-31, headed Chrome with the owner on 8 warcenter.cz topics: **8/8 correct**, incl. series-episode URLs and unrated films. Extension requests to csfd.cz **pass Anubis**. |
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
@@ -43,6 +43,8 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
    - real-world check together in headed Chrome: ~8 titles per service (films, series, Czech titles, duplicate names); record the hit rate and whether `/hledat/` passes Anubis,
    - then mention VOD on the welcome page and in the store texts (privacy texts are already updated), and release v1.2.0.
    - More sites (Prime Video, SkyShowtime, Oneplay, Voyo, iVysílání): the owner decides; each is one entry in `VOD_SITES` + a captured fixture.
+   - Reviewer follow-ups that need the real search page: restrict `parseSearchPage` to the film/series result sections; consider memoising search candidates per URL in the background.
+   - The 30-lookups-per-page-load cap also applies to long SPA sessions (Netflix never reloads). If the owner hits it in practice, revisit (e.g. a per-hour budget in the background instead).
 1. Create store developer accounts and submit (CWS one-time fee, Edge Partner Center, AMO). Follow [launch-plan.md](launch-plan.md).
 2. **Rating link in the popup:** add it once the store listing URLs exist (it needs per-store URLs). The owner wants only genuinely useful features. Onboarding is done (v1.1.0). The **uninstall survey was rejected** by the owner: don't add it.
 3. Optionally send the drafted e-mail to ČSFD asking for consent or an API.
@@ -59,6 +61,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
   - Netflix: the detail is a modal (`?jbv=<id>` or `/title/<id>`), the logo has an empty `alt`, the title is in `.about-header strong`, the year of a series is its latest season;
   - HBO Max: `document.title` is English and wrapped in bidi isolates, the Czech title is the hero image `alt`;
   - Apple TV: the `h1` is visually hidden, JSON-LD has no Movie, and "2026 Oscar® Winner" sits next to the real year.
+- **Playwright grants user activation by itself** shortly after load (and `page.evaluate` runs with a user gesture), so the §4b activation gate cannot be E2E-tested; unit tests and the manual check cover it.
 
 ## Where things are
 `src/lib/` holds the logic (DI, pure). `src/entrypoints/` is thin wiring. `tests/unit` + `tests/e2e` + `tests/bench`. The Claude Code harness is in `.claude/` (hooks, path rules, reviewer subagents, skills `/add-url-pattern`, `/verify-in-browser`, `/release`). Tools: `tools/render-icons.mjs`, `tools/store-assets.mjs`, `tools/biome/no-html-sinks.grit`.

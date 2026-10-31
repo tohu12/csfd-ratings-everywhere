@@ -98,7 +98,7 @@ Unofficial; not affiliated with ČSFD.
   - `storage`: rating cache and settings.
   - `activeTab`: the per-site on/off switch and link count in the popup.
 - **Remote code:** No.
-- **Data usage:** the developer collects no data. Requests to csfd.cz reveal to ČSFD which films are linked on pages the user views, as opening those links would, and which titles' details the user opens on streaming sites. Firefox declares this as `websiteContent` in the manifest.
+- **Data usage:** the developer collects no data. Requests to csfd.cz reveal to ČSFD which films are linked on pages the user views, as opening those links would, and which titles' details the user opens on streaming sites. Firefox declares this as `websiteContent` in the manifest. In Chrome's data-usage form, tick **Website content**; consider **Web history** too, since titles of opened streaming details (partly from the tab title) are sent to csfd.cz.
 - **Category suggestion:** pick in the dashboard. "Tools" or "Entertainment" fit best.
 
 ## Firefox (AMO)

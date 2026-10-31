@@ -45,24 +45,26 @@ Unofficial project, not affiliated with ČSFD.
 
 ## 4b. VOD detail views
 
-- **Sites:** `netflix.com`, `disneyplus.com`, `hbomax.com`, `tv.apple.com` and their subdomains. The curated list lives in `src/lib/vod/detect.ts`. A separate content script runs only there. Adding a site is an owner decision.
+- **Sites:** `netflix.com`, `disneyplus.com`, `hbomax.com`, `tv.apple.com` and their subdomains, HTTPS only. The curated list lives in `src/lib/vod/detect.ts`. A separate content script runs only there. Adding a site is an owner decision.
 - **Detection:** a detail view is open when
-  - the site's detail container is present (per-site hints: container, title, year, series marker, anchor), or
+  - the site's detail container is present (per-site hints: container, title, year, metadata row, series marker, anchor), or
   - generically: an `img[alt]` or `h1–h3` whose text equals the document title (brand, a leading "Watch"/"Sledujte" and bidi marks removed), plus a year or film/series signal.
   - Titles: the on-page title first (usually Czech), then the document title when it differs (HBO Max shows the English one).
-  - Year: the site's year element. Otherwise a year next to a duration or season count, or after "Rok:"/"Year:". A lone year (e.g. "2026 Oscar® Winner") is ignored.
-  - Kind: the site's series marker, then the URL (`/show/`, `/series/` → series; `/movie/`, `/film/` → film), then season words (`řada`, `série`, `části`, `seasons`, `minisérie` …), then a duration (→ film).
-- **Badge:** one at a time. It goes after the site's anchor (the year or metadata row) or after the title element when that is visible. Otherwise it floats in the bottom-right corner. Closing the detail view removes it. The page is re-checked at most every 300 ms after DOM changes.
-- **Requests:**
-  - Opening a detail view counts as the user's action. Browse rows, tiles and hover previews never trigger anything.
-  - One `findTitle` per distinct title per page load. Reopening the same title reuses the answer.
-  - At most **30** lookups per page load; beyond that the badge only links to the ČSFD search.
+  - Year and kind come **only from the metadata row** (the site's `meta` element, else the year element's parent; generically the page text without scripts/styles, capped at 10 000 characters). A synopsis or "more like this" list never decides them.
+  - Year: the site's year element, else a year next to a duration or season count, or after "Rok:"/"Year:". A lone year (e.g. "2026 Oscar® Winner") is ignored.
+  - Kind: the site's series marker, then the URL (`/show/`, `/series/` → series; `/movie/`, `/film/` → film), then the metadata row: a season count (`2 řady`, `4 části`, `minisérie`, `seasons` …; whole words only, so "sériích" does not count) → series, a duration → film, both or neither → unknown.
+- **Badge:** one at a time. It goes after the site's anchor (the year or metadata row) or after the title element when that is visible. Otherwise it floats in the bottom-right corner. It first links to the ČSFD search; closing the detail view removes it. The page is re-checked at most every 300 ms after DOM changes, and after the user's first click or key press.
+- **Requests:** a lookup (`findTitle`) is sent only when all hold:
+  - the same title, year and kind were detected on **two checks in a row** (a detail view that renders in steps costs one lookup),
+  - the year is known,
+  - the user has interacted with the page (`navigator.userActivation.hasBeenActive`, which page scripts cannot fake and which resets on every page load); opening a detail view is that interaction on all supported sites,
+  - fewer than **30** lookups were sent on this page load.
+  - Browse rows, tiles and hover previews never trigger anything. Reopening a title reuses its answer; an `error` or `blocked` answer is not reused, so reopening retries.
   - Background: lookup cache → ČSFD search for the first title → the second title only if the first finds no match → the film page via `getRating` (cache first). An uncached title costs at most 3 requests.
-  - Page scripts can fake a detail view; the VOD-only hosts and the 30-lookup cap bound that.
 - **Matching:**
   - exact title after normalisation (case, diacritics, punctuation, bidi marks), against the Czech or the original ČSFD name,
-  - film: year ±1; series: ČSFD start year ≤ the VOD year (VOD sites show the latest season's year),
-  - kind must agree when both sides know it,
+  - film: year ±1; series: ČSFD start year ≤ the VOD year (VOD sites show the latest season's year); a candidate without a year never fits,
+  - kind must agree when both sides know it (ČSFD results without a type label are films; unknown labels leave the kind open),
   - several fits → the one with the exact year if unique,
   - anything else is `unsure`. Seasons and episodes in the results are ignored.
 - **`unsure`** shows "ČSFD ?" linking to the ČSFD search for the first title. A possibly wrong percentage is never shown.
@@ -100,7 +102,7 @@ Unofficial project, not affiliated with ČSFD.
 - Messages:
   - `getRating` (cache, then network), sent automatically for the first 10 films per page or after a user action (§4),
   - `peekRating` (cache only),
-  - `findTitle` (§4b): 1–2 titles of 1–200 characters, year 1800–2100 or null, kind `film`/`series` or null; answers `found` (id + rating), `unsure`, `blocked` or `error`,
+  - `findTitle` (§4b): 1–2 well-formed titles of 1–200 characters, year 1800–2100 or null, kind `film`/`series` or null; answers `found` (id + rating), `unsure`, `blocked` or `error`,
   - `clearCache` (ratings and lookups).
   - Every message is validated, and the sender must be this extension.
 - Requests go to `https://www.csfd.cz/film/<id>/prehled/` and, for §4b only, `https://www.csfd.cz/hledat/?q=<title>`, with default browser headers and the user's csfd.cz cookies, exactly like the user opening the link. Search requests share the backoff, rate limit and Anubis detection below.
@@ -118,14 +120,14 @@ Unofficial project, not affiliated with ČSFD.
   - `ok` for 7 days, `none` for 1 day, HTTP 404/410 as `error` for 1 day,
   - `blocked` and other errors are not cached,
   - at most 2 000 entries; the oldest are evicted first,
-  - title lookups (normalised titles + year + kind → id) separately: a found id for 30 days, `unsure` for 1 day, at most 2 000 entries.
+  - title lookups (normalised titles, capped at 120 characters, + year + kind → id) separately: a found id for 30 days, `unsure` for 1 day, at most 500 entries.
 - A storage failure never turns a fetched rating into an error.
 - Parsing:
   1. JSON-LD: the item with `aggregateRating` (`ratingValue` scaled by `bestRating`, `ratingCount`, `name`), else an item whose `@type` is Movie/TVSeries/TVSeason/TVEpisode/CreativeWorkSeason (→ `none`). Other JSON-LD (WebSite, Organization…) is ignored.
   2. Fallback: `.film-rating-average` text + `<h1>` title.
   3. A page with neither → `error`.
   - The colour is derived from the percentage (§5a), not read from the page.
-  - Search pages: each `<article>` with a `.film-title-name` link to `/film/<id>/` (the last id of nested URLs), the year and type from `.film-title-info` (`seriál`/`TV pořad` → series; `série`/`epizoda` → skipped; else film) and the original name from `.search-name`.
+  - Search pages: each `<article>` with a `.film-title-name` link to `/film/<id>/` (the last id of nested URLs), the year and type from `.film-title-info` (no label or `TV film` → film; `seriál`/`TV seriál`/`TV pořad`/`minisérie` → series; `série`/`epizoda` → skipped; other labels → unknown); ids must be safe positive integers and the original name from `.search-name`.
 
 ## 7. Settings (`storage.sync`)
 

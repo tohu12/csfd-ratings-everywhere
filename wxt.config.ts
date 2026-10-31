@@ -16,7 +16,8 @@ export default defineConfig({
           id: 'csfd-ratings-everywhere@tohu12.github.io',
           // 140 (ESR) is the first desktop release with data_collection_permissions.
           strict_min_version: '140.0',
-          // Film ids found on visited pages are sent to csfd.cz (SPEC §4) → declared honestly.
+          // Film ids found on visited pages and titles of opened streaming details are sent to
+          // csfd.cz (SPEC §4, §4b) → declared honestly.
           data_collection_permissions: { required: ['websiteContent'] },
         },
         gecko_android: { strict_min_version: '142.0' },
