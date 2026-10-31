@@ -1,0 +1,13 @@
+language js
+
+// XSS guard: the extension runs on every page; never turn strings into HTML.
+or {
+  `$target.innerHTML = $value`,
+  `$target.outerHTML = $value`,
+  `$target.insertAdjacentHTML($position, $value)`,
+  `$target.setHTMLUnsafe($value)`,
+  `$doc.write($value)`,
+  `$doc.writeln($value)`
+} as $sink where {
+  register_diagnostic(span=$sink, message="HTML string sinks are forbidden (XSS). Build the DOM with createElement + textContent.")
+}

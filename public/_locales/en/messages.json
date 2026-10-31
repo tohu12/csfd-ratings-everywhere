@@ -1,0 +1,105 @@
+{
+  "extName": {
+    "message": "ČSFD Ratings Everywhere"
+  },
+  "extDescription": {
+    "message": "Unofficial. Turns ČSFD links on any website into clickable links and shows the film's ČSFD rating next to them."
+  },
+  "badgeIdle": {
+    "message": "Hover to load the ČSFD rating"
+  },
+  "badgeLoading": {
+    "message": "Loading ČSFD rating…"
+  },
+  "badgeRating": {
+    "message": "$TITLE$ – $PERCENT$ %",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      },
+      "percent": {
+        "content": "$2"
+      }
+    }
+  },
+  "badgeRatingWithCount": {
+    "message": "$TITLE$ – $PERCENT$ % ($COUNT$ ratings)",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      },
+      "percent": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      }
+    }
+  },
+  "badgeNone": {
+    "message": "No rating yet"
+  },
+  "badgeBlocked": {
+    "message": "ČSFD did not return the rating right now. Try again later."
+  },
+  "badgeError": {
+    "message": "Rating unavailable"
+  },
+  "badgeOpen": {
+    "message": "Open on ČSFD"
+  },
+  "untitled": {
+    "message": "Film"
+  },
+  "popupSite": {
+    "message": "On for this site"
+  },
+  "popupSiteUnavailable": {
+    "message": "Not available on this page"
+  },
+  "popupEnabled": {
+    "message": "On everywhere"
+  },
+  "popupLinks": {
+    "message": "ČSFD links on this page"
+  },
+  "popupOptions": {
+    "message": "Settings"
+  },
+  "optionsTitle": {
+    "message": "ČSFD Ratings Everywhere – settings"
+  },
+  "optionsEnabled": {
+    "message": "Extension is on"
+  },
+  "optionsShowRatings": {
+    "message": "Load ratings in % (otherwise links only)"
+  },
+  "optionsDisplay": {
+    "message": "Show ratings as"
+  },
+  "optionsDisplayBadge": {
+    "message": "Badge next to the link"
+  },
+  "optionsDisplayTooltip": {
+    "message": "Hover card only (nothing inserted into the page)"
+  },
+  "optionsDisabledHosts": {
+    "message": "Disabled sites"
+  },
+  "optionsDisabledHostsHint": {
+    "message": "One domain per line, e.g. example.com"
+  },
+  "optionsClearCache": {
+    "message": "Clear stored ratings"
+  },
+  "optionsCacheCleared": {
+    "message": "Stored ratings cleared."
+  },
+  "optionsSaved": {
+    "message": "Saved."
+  },
+  "optionsDisclaimer": {
+    "message": "Unofficial extension, not affiliated with ČSFD. Ratings are read directly from csfd.cz and stored only in your browser."
+  }
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "content script",
+    "path": ".output/chrome-mv3/content-scripts/content.js",
+    "limit": "8 kB",
+    "gzip": true
+  },
+  {
+    "name": "background",
+    "path": ".output/chrome-mv3/background.js",
+    "limit": "10 kB",
+    "gzip": true
+  }
+]

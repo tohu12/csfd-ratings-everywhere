@@ -1,0 +1,20 @@
+name: ČSFD link not detected
+description: A ČSFD link on some page shows no badge or the wrong film
+labels: [url-detection]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page URL where it happens
+    validations:
+      required: true
+  - type: input
+    id: csfd
+    attributes:
+      label: The ČSFD URL as written on the page
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What did you expect / what happened?

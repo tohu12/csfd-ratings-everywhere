@@ -1,0 +1,23 @@
+node_modules
+.output
+.wxt
+coverage
+playwright-report
+test-results
+stats.html
+stats-*.json
+web-ext.config.ts
+*.log
+.env
+.env.*
+
+# Personal agent settings
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store

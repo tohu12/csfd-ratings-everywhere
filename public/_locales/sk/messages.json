@@ -1,0 +1,105 @@
+{
+  "extName": {
+    "message": "ČSFD hodnotenie všade"
+  },
+  "extDescription": {
+    "message": "Neoficiálne. Z odkazov na ČSFD na akomkoľvek webe urobí klikateľné odkazy a ukáže pri nich hodnotenie filmu v percentách."
+  },
+  "badgeIdle": {
+    "message": "Prejdi myšou pre hodnotenie z ČSFD"
+  },
+  "badgeLoading": {
+    "message": "Načítavam hodnotenie z ČSFD…"
+  },
+  "badgeRating": {
+    "message": "$TITLE$ – $PERCENT$ %",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      },
+      "percent": {
+        "content": "$2"
+      }
+    }
+  },
+  "badgeRatingWithCount": {
+    "message": "$TITLE$ – $PERCENT$ % ($COUNT$ hodnotení)",
+    "placeholders": {
+      "title": {
+        "content": "$1"
+      },
+      "percent": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      }
+    }
+  },
+  "badgeNone": {
+    "message": "Film zatiaľ nemá hodnotenie"
+  },
+  "badgeBlocked": {
+    "message": "ČSFD teraz hodnotenie nevydalo, skús to neskôr."
+  },
+  "badgeError": {
+    "message": "Hodnotenie nie je dostupné"
+  },
+  "badgeOpen": {
+    "message": "Otvoriť na ČSFD"
+  },
+  "untitled": {
+    "message": "Film"
+  },
+  "popupSite": {
+    "message": "Zapnuté na tomto webe"
+  },
+  "popupSiteUnavailable": {
+    "message": "Na tejto stránke sa nedá použiť"
+  },
+  "popupEnabled": {
+    "message": "Zapnuté všade"
+  },
+  "popupLinks": {
+    "message": "Odkazy na ČSFD na stránke"
+  },
+  "popupOptions": {
+    "message": "Nastavenia"
+  },
+  "optionsTitle": {
+    "message": "ČSFD hodnotenie všade – nastavenia"
+  },
+  "optionsEnabled": {
+    "message": "Rozšírenie je zapnuté"
+  },
+  "optionsShowRatings": {
+    "message": "Načítavať hodnotenie v % (inak len odkazy)"
+  },
+  "optionsDisplay": {
+    "message": "Zobrazenie hodnotenia"
+  },
+  "optionsDisplayBadge": {
+    "message": "Odznak pri odkaze"
+  },
+  "optionsDisplayTooltip": {
+    "message": "Len pri prejdení myšou (nič sa nevkladá do stránky)"
+  },
+  "optionsDisabledHosts": {
+    "message": "Vypnuté weby"
+  },
+  "optionsDisabledHostsHint": {
+    "message": "Jedna doména na riadok, napr. example.com"
+  },
+  "optionsClearCache": {
+    "message": "Vymazať uložené hodnotenia"
+  },
+  "optionsCacheCleared": {
+    "message": "Uložené hodnotenia vymazané."
+  },
+  "optionsSaved": {
+    "message": "Uložené."
+  },
+  "optionsDisclaimer": {
+    "message": "Neoficiálne rozšírenie, nie je spojené s ČSFD. Hodnotenie sa číta priamo z csfd.cz a ukladá sa len v tvojom prehliadači."
+  }
+}

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="manifest.open_in_tab" content="true" />
+    <title>ČSFD</title>
+    <link rel="stylesheet" href="../../assets/ui.css" />
+  </head>
+  <body class="options">
+    <main>
+      <h1 data-i18n="optionsTitle">ČSFD Ratings Everywhere – settings</h1>
+      <div class="row">
+        <label for="enabled" data-i18n="optionsEnabled">Extension is on</label>
+        <input id="enabled" type="checkbox" />
+      </div>
+      <div class="row">
+        <label for="show-ratings" data-i18n="optionsShowRatings">Load ratings in % (otherwise links only)</label>
+        <input id="show-ratings" type="checkbox" />
+      </div>
+      <div class="row">
+        <label for="display" data-i18n="optionsDisplay">Show ratings as</label>
+        <select id="display">
+          <option value="badge" data-i18n="optionsDisplayBadge">Badge next to the link</option>
+          <option value="tooltip" data-i18n="optionsDisplayTooltip">Hover card only (nothing inserted into the page)</option>
+        </select>
+      </div>
+      <div class="stack">
+        <label for="disabled-hosts" data-i18n="optionsDisabledHosts">Disabled sites</label>
+        <textarea id="disabled-hosts" rows="6" spellcheck="false"></textarea>
+        <small data-i18n="optionsDisabledHostsHint">One domain per line, e.g. example.com</small>
+      </div>
+      <p>
+        <button id="clear-cache" type="button" data-i18n="optionsClearCache">Clear stored ratings</button>
+        <output id="status" aria-live="polite"></output>
+      </p>
+      <p><small data-i18n="optionsDisclaimer">Unofficial extension, not affiliated with ČSFD. Ratings are read directly from csfd.cz and stored only in your browser.</small></p>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

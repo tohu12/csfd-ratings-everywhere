@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>__MSG_extName__</title>
+    <link rel="stylesheet" href="../../assets/ui.css" />
+  </head>
+  <body class="popup">
+    <h1 data-i18n="extName">ČSFD Ratings Everywhere</h1>
+    <div class="row">
+      <label for="site-toggle"><span data-i18n="popupSite">On for this site</span><small id="site-name"></small></label>
+      <input id="site-toggle" type="checkbox" />
+    </div>
+    <div class="row">
+      <label for="global-toggle" data-i18n="popupEnabled">On everywhere</label>
+      <input id="global-toggle" type="checkbox" />
+    </div>
+    <p class="row"><span data-i18n="popupLinks">ČSFD links on this page</span><strong id="link-count">–</strong></p>
+    <button id="open-options" type="button" data-i18n="popupOptions">Settings</button>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
