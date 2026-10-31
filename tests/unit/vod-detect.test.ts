@@ -293,3 +293,199 @@ describe('detectTitle reads year and kind from the metadata row only', () => {
     expect(found).toBeNull();
   });
 });
+
+describe('detectTitle on public pages of generically detected sites', () => {
+  it.each([
+    [
+      'ct-film',
+      'https://www.ceskatelevize.cz/porady/14106473148-wind-river/',
+      ['Wind River'],
+      2016,
+      'film',
+    ],
+    [
+      'ct-series',
+      'https://www.ceskatelevize.cz/porady/10111864738-hercule-poirot/',
+      ['Hercule Poirot'],
+      null,
+      'series',
+    ],
+    [
+      'prime-film',
+      'https://www.primevideo.com/detail/0FC3O0LQUX1IKRA19XD4UKJASF',
+      ['Road House'],
+      2024,
+      'film',
+    ],
+    [
+      'prime-series',
+      'https://www.primevideo.com/detail/0K16R3PLUFGC2JUE457C26O4OD',
+      ['Reacher'],
+      2026,
+      'series',
+    ],
+    [
+      'skyshowtime-film',
+      'https://www.skyshowtime.com/cz/stream/movies/top-gun-maverick/0c63',
+      ['Top Gun: Maverick'],
+      2022,
+      'film',
+    ],
+    [
+      'skyshowtime-series',
+      'https://www.skyshowtime.com/cz/stream/tv/marshals/45b6',
+      ['Marshals'],
+      null,
+      'series',
+    ],
+    [
+      'oneplay-series',
+      'https://www.oneplay.cz/porad/9486-extraktori',
+      ['Extraktoři'],
+      2026,
+      'series',
+    ],
+    [
+      'prima-film',
+      'https://www.iprima.cz/filmy/prava-blondynka',
+      ['Pravá blondýnka'],
+      2001,
+      'film',
+    ],
+  ] as const)('%s', (name, url, titles, year, kind) => {
+    expect(detect(name, url)).toMatchObject({ titles, year, kind });
+  });
+
+  it('prefers a heading over a poster image as the badge anchor', () => {
+    const found = detect('ct-film', 'https://www.ceskatelevize.cz/porady/14106473148-wind-river/');
+    expect(found?.anchor?.tagName).toBe('H1');
+  });
+
+  it('ignores a category page whose heading matches its title', () => {
+    expect(
+      detect(
+        'ct-category',
+        'https://www.ceskatelevize.cz/ivysilani/kategorie/3976-serialy/4000-mysteriozni/',
+      ),
+    ).toBeNull();
+  });
+
+  it("ignores paths outside the site's detail sections (news on the same host)", () => {
+    expect(detect('prima-film', 'https://www.iprima.cz/zpravy/prava-blondynka')).toBeNull();
+  });
+});
+
+describe('detectTitle generic signals', () => {
+  const prime = VOD_SITES.find((s) => s.brand === 'Prime Video');
+  const run = (head: string, body: string, path = '/detail/x') =>
+    prime &&
+    detectTitle(
+      parse(`<head>${head}</head><body>${body}</body>`),
+      new URL(`https://www.primevideo.com${path}`),
+      prime,
+    );
+  const ld = (value: unknown) =>
+    `<script type="application/ld+json">${JSON.stringify(value)}</script>`;
+
+  it('strips a "Brand:" prefix and a trailing "(year)", which also gives the year', () => {
+    expect(
+      run(
+        '<title>Prime Video: Duna (2021)</title>',
+        '<h1><img alt="Duna (2021)"></h1><p>Sci-fi</p>',
+      ),
+    ).toMatchObject({
+      titles: ['Duna'],
+      year: 2021,
+      kind: null,
+    });
+  });
+
+  it('takes the kind from a JSON-LD item with the same name, in a list or a @graph', () => {
+    expect(
+      run(
+        `<title>Duna (2021)</title>${ld([
+          { '@type': 'WebSite', name: 'x' },
+          { '@type': 'Movie', name: 'Duna' },
+        ])}`,
+        '<h2>Duna</h2>',
+      ),
+    ).toMatchObject({ kind: 'film' });
+    expect(
+      run(
+        `<title>Duna</title>${ld({ '@graph': [{ '@type': 'TVSeries', name: 'Duna' }] })}`,
+        '<h2>Duna</h2>',
+      ),
+    ).toMatchObject({ kind: 'series', year: null });
+  });
+
+  it('finds the title by its JSON-LD name even when the document title has another wording', () => {
+    expect(
+      run(
+        `<title>Sledujte online</title>${ld({ '@type': 'TVSeries', name: 'Duna' })}`,
+        '<h2>Duna</h2>',
+      ),
+    ).toMatchObject({ titles: ['Duna'] });
+  });
+
+  it('uses the JSON-LD name without an on-page element when the document title starts with it', () => {
+    const found = run(
+      `<title>Duna - celý film</title>${ld({ '@type': 'Movie', name: 'Duna' })}`,
+      '<p>nothing</p>',
+    );
+    expect(found).toMatchObject({ titles: ['Duna'], kind: 'film', anchor: null });
+    expect(
+      run(`<title>Jiný film</title>${ld({ '@type': 'Movie', name: 'Duna' })}`, '<p>nothing</p>'),
+    ).toBeNull();
+  });
+
+  it('ignores JSON-LD of another title, without a name, invalid or too large', () => {
+    const head = (extra: string) => `<title>Duna</title>${extra}`;
+    expect(run(head(ld({ '@type': 'Movie', name: 'Jiný' })), '<h2>Duna</h2>')).toBeNull();
+    expect(run(head(ld({ '@type': 'Movie' })), '<h2>Duna</h2>')).toBeNull();
+    expect(run(head(ld({ '@type': 'Movie', name: ' ' })), '<h2>Duna</h2>')).toBeNull();
+    expect(run(head(ld('Movie')), '<h2>Duna</h2>')).toBeNull();
+    expect(
+      run(head('<script type="application/ld+json">{oops</script>'), '<h2>Duna</h2>'),
+    ).toBeNull();
+    const huge = ld({ '@type': 'Movie', name: 'Duna', padding: 'x'.repeat(100_000) });
+    expect(run(head(huge), '<h2>Duna</h2>')).toBeNull();
+  });
+
+  it('takes the kind from og:type only when og:title names the same title', () => {
+    const og = (title: string, type: string) =>
+      `<title>Duna</title><meta property="og:title" content="${title}"><meta property="og:type" content="${type}">`;
+    expect(run(og('Duna | Prime', 'video.movie'), '<h2>Duna</h2>')).toMatchObject({ kind: 'film' });
+    expect(run(og('Duna | Prime', 'video.tv_show'), '<h2>Duna</h2>')).toMatchObject({
+      kind: 'series',
+    });
+    expect(run(og('Duna | Prime', 'video.episode'), '<h2>Duna</h2>')).toMatchObject({
+      kind: 'series',
+    });
+    expect(run(og('Duna | Prime', 'website'), '<h2>Duna</h2>')).toBeNull();
+    expect(run(og('Jiný film', 'video.movie'), '<h2>Duna</h2>')).toBeNull();
+    expect(
+      run('<title>Duna</title><meta property="og:type" content="video.movie">', '<h2>Duna</h2>'),
+    ).toBeNull();
+  });
+
+  it('reads Czech plural paths', () => {
+    expect(run('<title>Duna</title>', '<h2>Duna</h2>', '/filmy/duna')).toMatchObject({
+      kind: 'film',
+    });
+    expect(run('<title>Duna</title>', '<h2>Duna</h2>', '/serialy/duna')).toMatchObject({
+      kind: 'series',
+    });
+    expect(run('<title>Duna</title>', '<h2>Duna</h2>', '/stream/tv/duna')).toMatchObject({
+      kind: 'series',
+    });
+  });
+
+  it('looks for year and kind only in the nearest few ancestors of the title', () => {
+    const deep =
+      '<div><div><div><div><div><div><div><h2>Duna</h2></div></div></div></div></div></div></div>';
+    expect(run('<title>Duna</title>', `${deep}<p>2021 · 2 h 35 m</p>`)).toBeNull();
+    expect(
+      run('<title>Duna</title>', `<section><h2>Duna</h2></section><p>2021 · 2 h 35 m</p>`),
+    ).toMatchObject({ year: 2021 });
+  });
+});

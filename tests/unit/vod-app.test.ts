@@ -21,11 +21,11 @@ function loadVodPage(name: string): void {
 }
 
 /** A Netflix detail modal for any title, built like the real one (no year: still rendering). */
-function netflixModal(title: string, year: number | null): string {
+function netflixModal(title: string, year: number | null, duration = '1 h 40 m'): string {
   const yearEl = year === null ? '' : `<div class="year">${year}</div>`;
   return (
     '<div class="previewModal--wrapper detail-modal"><div class="videoMetadata--container">' +
-    `<div class="videoMetadata--line">${yearEl}<span class="duration">1 h 40 m</span></div></div>` +
+    `<div class="videoMetadata--line">${yearEl}<span class="duration">${duration}</span></div></div>` +
     `<div class="about-header"><h3>O pořadu <strong>${title}</strong></h3></div></div>`
   );
 }
@@ -113,13 +113,22 @@ describe('startVodApp', () => {
     expect(findTitle).toHaveBeenCalledWith({ titles: ['Duna'], year: 2021, kind: 'film' });
   });
 
-  it('never looks a title up without a year', () => {
+  it('never looks a title up without a year or kind', () => {
     document.body.replaceChildren();
     start();
-    open('Duna', null);
+    document.title = 'Duna – Netflix';
+    document.body.innerHTML = netflixModal('Duna', null, 'HD');
+    mutate();
     expect(badge()).not.toBeNull();
     expect(findTitle).not.toHaveBeenCalled();
     expect(pill()?.title).toBe('badgeOpen');
+  });
+
+  it('looks a title up by its kind when the year is unknown', () => {
+    document.body.replaceChildren();
+    start();
+    open('Duna', null);
+    expect(findTitle).toHaveBeenCalledWith({ titles: ['Duna'], year: null, kind: 'film' });
   });
 
   it('waits for the user to interact with the page before asking ČSFD', () => {

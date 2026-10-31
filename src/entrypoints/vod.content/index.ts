@@ -6,7 +6,9 @@ import { browserTranslator } from '@/platform/i18n';
 
 export default defineContentScript({
   // Only the curated VOD sites (SPEC §4b), HTTPS only; `*.host` also matches the bare host.
-  matches: VOD_SITES.map((site) => `https://*.${site.host}/*`),
+  matches: VOD_SITES.flatMap((site) =>
+    (site.paths ?? ['/']).map((path) => `https://*.${site.host}${path}*`),
+  ),
   runAt: 'document_idle',
   async main(ctx) {
     const site = findSite(location.hostname);

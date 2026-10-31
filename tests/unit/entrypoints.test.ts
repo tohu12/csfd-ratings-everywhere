@@ -163,6 +163,13 @@ describe('vod content entrypoint', () => {
       'https://*.disneyplus.com/*',
       'https://*.hbomax.com/*',
       'https://*.tv.apple.com/*',
+      'https://*.primevideo.com/*',
+      'https://*.skyshowtime.com/*',
+      'https://*.oneplay.cz/*',
+      'https://*.ceskatelevize.cz/porady/*',
+      'https://*.ceskatelevize.cz/ivysilani/*',
+      'https://*.iprima.cz/filmy/*',
+      'https://*.iprima.cz/serialy/*',
     ]);
   });
 

@@ -47,7 +47,7 @@ interface Shown {
 /**
  * Shows the ČSFD rating of the film or series whose detail view is open on a VOD site.
  * One badge at a time, next to the title (or floating in the corner); one lookup per title per page.
- * A lookup needs a stable detection (two checks in a row), a year and a user who has interacted
+ * A lookup needs a stable detection (two checks in a row), a year or kind and a user who has interacted
  * with the page; until then the badge only links to the ČSFD search.
  */
 export function startVodApp(deps: VodDeps): VodApp {
@@ -86,7 +86,8 @@ export function startVodApp(deps: VodDeps): VodApp {
   };
 
   const request = (shown: Shown): void => {
-    if (!settings.showRatings || shown.query.year === null || !deps.isUserActive()) {
+    const { year, kind } = shown.query;
+    if (!settings.showRatings || (year === null && kind === null) || !deps.isUserActive()) {
       return;
     }
     const result = lookUp(shown.key, shown.query);
