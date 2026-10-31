@@ -16,6 +16,8 @@ export const HOVER_INTENT_MS = 150;
  * right after a real key press (Tab, arrows…), which scripts cannot fake.
  */
 export const KEYBOARD_FOCUS_WINDOW_MS = 1000;
+/** Distinct films per page fetched automatically when visible; the rest load on hover/focus. */
+export const AUTO_LOAD_LIMIT = 10;
 
 export interface ContentDeps {
   doc: Document;
@@ -23,7 +25,7 @@ export interface ContentDeps {
   settings: Settings;
   t: Translate;
   formatCount: (count: number) => string;
-  /** `getRating`: may hit the network. Only ever called after a real user action. */
+  /** `getRating`: may hit the network. Only as SPEC §4 allows (first films per page, user actions). */
   requestRating: (id: number) => Promise<unknown>;
   /** `peekRating`: cache only, never the network. */
   peekRating: (id: number) => Promise<unknown>;
@@ -52,15 +54,17 @@ interface Decorator {
 interface Ratings {
   /** Network-capable load; final answers (`ok`/`none`) are memoised for the page's lifetime. */
   load(id: number): Promise<Rating>;
-  /** Cache-only lookup; `null` when unknown. */
+  /** A final answer or a load already in flight for this film; never starts a request. */
+  current(id: number): Promise<Rating> | undefined;
+  /** Cache-only lookup, made at most once per film per page; `null` when unknown. */
   peek(id: number): Promise<Rating | null>;
 }
 
 const INERT: ContentApp = { stats: () => ({ links: 0 }), stop: () => {} };
 
 /**
- * Linkifies ČSFD URLs and shows ratings as badges or hover cards. Ratings are fetched only
- * after a real hover or keyboard focus; ratings already in the cache are shown right away.
+ * Linkifies ČSFD URLs and shows ratings as badges or hover cards. Cached ratings show at once;
+ * the first AUTO_LOAD_LIMIT films load automatically when visible, the rest after a real hover/focus.
  */
 export function startContentApp(deps: ContentDeps): ContentApp {
   const { doc, settings } = deps;
@@ -106,6 +110,7 @@ export function startContentApp(deps: ContentDeps): ContentApp {
 function createRatings(deps: ContentDeps): Ratings {
   const final = new Map<number, Rating>();
   const inFlight = new Map<number, Promise<Rating>>();
+  const peeks = new Map<number, Promise<Rating | null>>();
   const remember = (id: number, rating: Rating) => {
     // `blocked`/`error` are transient: a later hover may succeed.
     if (rating.status === 'ok' || rating.status === 'none') {
@@ -136,17 +141,30 @@ function createRatings(deps: ContentDeps): Ratings {
       }
       return promise;
     },
-    async peek(id) {
+    current(id) {
+      const known = final.get(id);
+      return known ? Promise.resolve(known) : inFlight.get(id);
+    },
+    peek(id) {
       const known = final.get(id);
       if (known) {
-        return known;
+        return Promise.resolve(known);
       }
-      const value = await deps.peekRating(id).catch(() => null);
-      if (!isRating(value)) {
-        return null;
+      let promise = peeks.get(id);
+      if (!promise) {
+        promise = deps
+          .peekRating(id)
+          .catch(() => null)
+          .then((value) => {
+            if (!isRating(value)) {
+              return null;
+            }
+            remember(id, value);
+            return value;
+          });
+        peeks.set(id, promise);
       }
-      remember(id, value);
-      return value;
+      return promise;
     },
   };
 }
@@ -214,7 +232,11 @@ function createIntent(deps: ContentDeps, signal: AbortSignal): Intent {
   };
 }
 
-/** Inline pill after each link: cached ratings appear when visible, others on hover/focus. */
+/**
+ * Inline pill after each link. When it becomes visible: a cached rating is shown at once;
+ * otherwise it is fetched, for at most AUTO_LOAD_LIMIT distinct films per page.
+ * Everything else loads on hover/focus.
+ */
 function badgeDecorator(
   doc: Document,
   options: BadgeOptions,
@@ -223,23 +245,29 @@ function badgeDecorator(
   intent: Intent,
   deps: ContentDeps,
 ): Decorator {
-  const waiting = new Map<Element, { badge: Badge; id: number }>();
+  const waiting = new Map<Element, () => void>();
   const visibility = deps.createIntersectionObserver((entries) => {
     for (const entry of entries) {
-      const pending = waiting.get(entry.target);
-      if (entry.isIntersecting && pending) {
+      const onVisible = waiting.get(entry.target);
+      if (entry.isIntersecting && onVisible) {
         forget(entry.target);
-        void ratings.peek(pending.id).then((rating) => {
-          if (rating) {
-            pending.badge.render({ kind: 'rating', rating });
-          }
-        });
+        onVisible();
       }
     }
   });
   const forget = (host: Element) => {
     waiting.delete(host);
     visibility.unobserve(host);
+  };
+  // Films auto-loaded on this page. Each film is tried at most once, even if that load fails;
+  // further links to it join the running load or wait for a hover.
+  const autoTried = new Set<number>();
+  const mayAutoLoad = (id: number) => {
+    if (autoTried.has(id) || autoTried.size >= AUTO_LOAD_LIMIT) {
+      return false;
+    }
+    autoTried.add(id);
+    return true;
   };
 
   return {
@@ -251,25 +279,12 @@ function badgeDecorator(
         return;
       }
       badge.render({ kind: 'idle' });
-      waiting.set(badge.host, { badge, id: link.id });
+      const controller = badgeRating(badge, link.id, ratings, mayAutoLoad, () =>
+        forget(badge.host),
+      );
+      waiting.set(badge.host, controller.onVisible);
       visibility.observe(badge.host);
-      let shown = false;
-      intent([anchor, badge.host], {
-        act: () => {
-          if (shown) {
-            return;
-          }
-          shown = true;
-          forget(badge.host);
-          badge.render({ kind: 'loading' });
-          void ratings.load(link.id).then((rating) => {
-            // Transient failures may be retried by the next hover.
-            shown = rating.status === 'ok' || rating.status === 'none';
-            badge.render({ kind: 'rating', rating });
-          });
-        },
-        leave: () => {},
-      });
+      intent([anchor, badge.host], { act: controller.onUserAction, leave: () => {} });
     },
     afterBatch() {
       // Feeds and chats drop old content: release badges that left the page unseen.
@@ -282,6 +297,68 @@ function badgeDecorator(
     stop() {
       visibility.disconnect();
       waiting.clear();
+    },
+  };
+}
+
+/**
+ * State machine of one badge: idle → loading → done. Transient failures return to idle so a
+ * hover can retry; a failed *automatic* load stays quiet unless the user is waiting for it.
+ */
+function badgeRating(
+  badge: Badge,
+  id: number,
+  ratings: Ratings,
+  mayAutoLoad: (id: number) => boolean,
+  stopWatching: () => void,
+): { onVisible: () => void; onUserAction: () => void } {
+  let state: 'idle' | 'loading' | 'done' = 'idle';
+  let userWaiting = false;
+
+  const show = (rating: Rating) => {
+    state = rating.status === 'ok' || rating.status === 'none' ? 'done' : 'idle';
+    badge.render({ kind: 'rating', rating });
+  };
+  const follow = (load: Promise<Rating>, byUser: boolean) => {
+    state = 'loading';
+    userWaiting = byUser;
+    stopWatching();
+    badge.render({ kind: 'loading' });
+    void load.then((rating) => {
+      if (rating.status === 'error' && !userWaiting) {
+        state = 'idle';
+        badge.render({ kind: 'idle' });
+        return;
+      }
+      show(rating);
+    });
+  };
+  const fromVisibility = (cached: Rating | null) => {
+    if (state !== 'idle') {
+      return;
+    }
+    if (cached) {
+      show(cached);
+      return;
+    }
+    const running = ratings.current(id);
+    if (running) {
+      follow(running, false);
+    } else if (mayAutoLoad(id)) {
+      follow(ratings.load(id), false);
+    }
+  };
+
+  return {
+    onVisible: () => {
+      void ratings.peek(id).then(fromVisibility);
+    },
+    onUserAction: () => {
+      if (state === 'idle') {
+        follow(ratings.load(id), true);
+      } else if (state === 'loading') {
+        userWaiting = true; // answer this hover even if the automatic load fails
+      }
     },
   };
 }

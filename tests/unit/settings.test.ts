@@ -16,7 +16,12 @@ describe('normalizeSettings', () => {
     expect(normalizeSettings(undefined)).toEqual(DEFAULT_SETTINGS);
     expect(normalizeSettings('x')).toEqual(DEFAULT_SETTINGS);
     expect(
-      normalizeSettings({ enabled: 'yes', showRatings: 1, display: 'popup', disabledHosts: 'a' }),
+      normalizeSettings({
+        enabled: 'yes',
+        showRatings: 1,
+        display: 'popup',
+        disabledHosts: 'a',
+      }),
     ).toEqual(DEFAULT_SETTINGS);
   });
 

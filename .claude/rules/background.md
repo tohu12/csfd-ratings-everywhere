@@ -13,7 +13,7 @@ paths:
   - ≤ 2 concurrent requests, ≥ 400 ms spacing,
   - dedupe in-flight ids,
   - cache per SPEC §6,
-  - network only after a real user action (SPEC §4),
+  - network only as SPEC §4 allows (first 10 films per page automatically, the rest on user action),
   - exponential backoff when blocked.
 - **Never circumvent Anubis.** No PoW, no spoofed headers/UA, no hidden tabs/iframes/offscreen documents to pass the challenge. Detect it and return `blocked`.
 - MV3 service workers can be killed at any time:

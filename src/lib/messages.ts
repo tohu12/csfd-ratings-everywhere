@@ -2,7 +2,7 @@ import { isRecord } from './rating';
 
 /**
  * Content script / popup / options → background.
- * `getRating` may hit the network and is only sent after a user action; `peekRating` reads the cache only.
+ * `getRating` may hit the network (only as SPEC §4 allows); `peekRating` reads the cache only.
  */
 export type BackgroundRequest =
   | { type: 'getRating'; id: number }

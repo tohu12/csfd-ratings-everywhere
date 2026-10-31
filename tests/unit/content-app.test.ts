@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  AUTO_LOAD_LIMIT,
   type ContentApp,
   type ContentDeps,
   createContentMessageHandler,
@@ -90,7 +91,7 @@ describe('startContentApp', () => {
       expect(peekRating).not.toHaveBeenCalled();
     });
 
-    it('shows cached ratings once visible, without hitting the network', async () => {
+    it('shows cached ratings once visible and fetches only the uncached films', async () => {
       peekRating.mockImplementation(async (id) => (id === 1773198 ? OK : null));
       start();
       io.show(badgeOf(ext()), false);
@@ -98,7 +99,8 @@ describe('startContentApp', () => {
       io.showAll();
       await vi.waitFor(() => expect(pill(badgeOf(ext())).textContent).toBe('78 %'));
       expect(peekRating).toHaveBeenCalledTimes(3);
-      expect(requestRating).not.toHaveBeenCalled();
+      await vi.waitFor(() => expect(requestRating).toHaveBeenCalledTimes(2));
+      expect(requestRating).not.toHaveBeenCalledWith(1773198);
       expect(io.observed.size).toBe(0);
       io.show(badgeOf(ext())); // already handled → ignored
       io.show(document.body); // unknown element → ignored
@@ -112,6 +114,175 @@ describe('startContentApp', () => {
       io.showAll();
       await vi.waitFor(() => expect(peekRating).toHaveBeenCalledTimes(3));
       expect(pill(badgeOf(ext())).title).toBe('badgeIdle');
+    });
+
+    describe(`automatic loading (first ${AUTO_LOAD_LIMIT} films)`, () => {
+      const texts = () => [...document.querySelectorAll(badgeSel)].map((b) => pill(b).textContent);
+
+      it('fetches uncached ratings as soon as badges are visible', async () => {
+        start();
+        expect(requestRating).not.toHaveBeenCalled();
+        io.showAll();
+        await vi.waitFor(() => expect(texts()).toEqual(['78 %', '78 %', '78 %']));
+        expect(requestRating.mock.calls.map(([id]) => id).sort()).toEqual([1700849, 1773198, 6]);
+      });
+
+      it('prefers the cache and never fetches what it already knows', async () => {
+        peekRating.mockResolvedValue({ status: 'none', title: 'X' });
+        start();
+        io.showAll();
+        await vi.waitFor(() => expect(texts()).toEqual(['– %', '– %', '– %']));
+        expect(requestRating).not.toHaveBeenCalled();
+      });
+
+      it('makes one request for 100 links to the same film', async () => {
+        document.body.innerHTML = Array.from(
+          { length: 100 },
+          () => '<p>https://www.csfd.cz/film/1664550-pobuda/</p>',
+        ).join('');
+        start();
+        io.showAll();
+        await vi.waitFor(() => expect(texts().every((t) => t === '78 %')).toBe(true));
+        expect(texts()).toHaveLength(100);
+        expect(requestRating).toHaveBeenCalledTimes(1);
+        expect(peekRating).toHaveBeenCalledTimes(1);
+      });
+
+      it(`loads at most ${AUTO_LOAD_LIMIT} distinct films per page; the rest on hover`, async () => {
+        document.body.innerHTML = Array.from(
+          { length: AUTO_LOAD_LIMIT + 5 },
+          (_, i) => `<p>csfd.cz/film/${i + 1}</p><p>csfd.cz/film/${i + 1}</p>`,
+        ).join('');
+        start();
+        io.showAll();
+        await vi.waitFor(() => expect(requestRating).toHaveBeenCalledTimes(AUTO_LOAD_LIMIT));
+        const last = [...document.querySelectorAll(badgeSel)].at(-1) as HTMLElement;
+        expect(pill(last).title).toBe('badgeIdle');
+        hover(last);
+        await vi.waitFor(() => expect(pill(last).textContent).toBe('78 %'));
+        expect(requestRating).toHaveBeenCalledTimes(AUTO_LOAD_LIMIT + 1);
+      });
+
+      it('stays idle after an automatic error (hover retries) but shows blocked', async () => {
+        requestRating.mockResolvedValueOnce({ status: 'error' });
+        requestRating.mockResolvedValueOnce({ status: 'blocked' });
+        start();
+        const badges = [...document.querySelectorAll(badgeSel)] as HTMLElement[];
+        io.show(badges[0] as Element);
+        await vi.waitFor(() => expect(requestRating).toHaveBeenCalledTimes(1));
+        await vi.waitFor(() => expect(pill(badges[0] as Element).title).toBe('badgeIdle'));
+        io.show(badges[1] as Element);
+        await vi.waitFor(() => expect(pill(badges[1] as Element).title).toBe('badgeBlocked'));
+        hover(badges[0] as Element);
+        await vi.waitFor(() => expect(pill(badges[0] as Element).textContent).toBe('78 %'));
+      });
+
+      const repeatedFilm = (count: number, id: number) => {
+        document.body.innerHTML = Array.from(
+          { length: count },
+          () => `<p>https://www.csfd.cz/film/${id}-x/</p>`,
+        ).join('');
+        start();
+        return [...document.querySelectorAll(badgeSel)] as HTMLElement[];
+      };
+
+      it('tries a film automatically only once, even when links appear one by one and it fails', async () => {
+        requestRating.mockResolvedValue({ status: 'error' });
+        const badges = repeatedFilm(5, 42);
+        for (const badge of badges) {
+          io.show(badge);
+          await vi.waitFor(() => expect(pill(badge).title).toBe('badgeIdle'));
+        }
+        expect(requestRating).toHaveBeenCalledTimes(1);
+        expect(peekRating).toHaveBeenCalledTimes(1);
+      });
+
+      it('lets a link that appears during a running load join it', async () => {
+        let finish: (value: unknown) => void = () => {};
+        requestRating.mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              finish = resolve;
+            }),
+        );
+        const [first, second] = repeatedFilm(2, 42) as [HTMLElement, HTMLElement];
+        io.show(first);
+        await vi.waitFor(() => expect(pill(first).title).toBe('badgeLoading'));
+        io.show(second);
+        await vi.waitFor(() => expect(pill(second).title).toBe('badgeLoading'));
+        finish(OK);
+        await vi.waitFor(() => expect(pill(second).textContent).toBe('78 %'));
+        expect(pill(first).textContent).toBe('78 %');
+        expect(requestRating).toHaveBeenCalledTimes(1);
+        expect(peekRating).toHaveBeenCalledTimes(1);
+      });
+
+      it('peeks the cache once per film even beyond the limit', async () => {
+        document.body.innerHTML = [
+          ...Array.from({ length: AUTO_LOAD_LIMIT }, (_, i) => `<p>csfd.cz/film/${i + 1}</p>`),
+          ...Array.from({ length: 30 }, () => '<p>csfd.cz/film/999</p>'),
+        ].join('');
+        start();
+        for (const badge of document.querySelectorAll(badgeSel)) {
+          io.show(badge);
+        }
+        await vi.waitFor(() => expect(requestRating).toHaveBeenCalledTimes(AUTO_LOAD_LIMIT));
+        expect(peekRating.mock.calls.filter(([id]) => id === 999)).toHaveLength(1);
+        expect(requestRating).not.toHaveBeenCalledWith(999);
+      });
+
+      it('uses a rating that finished loading while the cache lookup was still pending', async () => {
+        let answerPeek: (value: unknown) => void = () => {};
+        peekRating.mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              answerPeek = resolve;
+            }),
+        );
+        const [first, second] = repeatedFilm(2, 42) as [HTMLElement, HTMLElement];
+        io.show(second); // cache lookup pending…
+        hover(first); // …while a hover loads the film
+        await vi.waitFor(() => expect(pill(first).textContent).toBe('78 %'));
+        answerPeek(null);
+        await vi.waitFor(() => expect(pill(second).textContent).toBe('78 %'));
+        expect(requestRating).toHaveBeenCalledTimes(1);
+      });
+
+      it('answers a hover made during an automatic load, even if that load fails', async () => {
+        let finish: (value: unknown) => void = () => {};
+        requestRating.mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              finish = resolve;
+            }),
+        );
+        start();
+        const badge = badgeOf(ext());
+        io.show(badge);
+        await vi.waitFor(() => expect(pill(badge).title).toBe('badgeLoading'));
+        hover(ext());
+        hover(ext()); // still loading: nothing new
+        finish({ status: 'error' });
+        await vi.waitFor(() => expect(pill(badge).title).toBe('badgeError'));
+        expect(requestRating).toHaveBeenCalledTimes(1);
+      });
+
+      it('ignores a late cache answer once a hover already started loading', async () => {
+        let answerPeek: (value: unknown) => void = () => {};
+        peekRating.mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              answerPeek = resolve;
+            }),
+        );
+        start();
+        const badge = badgeOf(ext());
+        io.show(badge);
+        hover(ext());
+        answerPeek({ status: 'none', title: 'stale' });
+        await vi.waitFor(() => expect(pill(badge).textContent).toBe('78 %'));
+        expect(requestRating).toHaveBeenCalledTimes(1);
+      });
     });
 
     it('fetches after a real hover rests for the intent delay', async () => {

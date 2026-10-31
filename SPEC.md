@@ -30,15 +30,16 @@ Unofficial project, not affiliated with ČSFD.
   - a node whose ancestor was added in the same batch is not scanned twice.
 - Large pages are processed in idle-time chunks so the main thread is never blocked for long.
 
-## 4. When ratings are fetched (user action only)
+## 4. When ratings are fetched
 
-ČSFD is only contacted after a **real user action** on a specific link. Like opening the link, it is the user's own request.
-
-- **Hover:** a trusted `mouseenter` on the link (or its badge) that rests for 150 ms. Leaving earlier cancels it.
-- **Keyboard:** a trusted `focus` within 1 s after a real key press. `element.focus()` from page scripts produces a trusted focus event without a key press, so it never counts.
-- Synthetic events from page scripts (`isTrusted === false`) never trigger anything.
-- Ratings already in the cache are shown without any action and without network (`peekRating`), as soon as the badge becomes visible.
-- A film known on the page (`ok`/`none`) is never requested again on that page. `blocked`/`error` may be retried by the next action.
+- **Cache first:** a rating already in the cache is shown as soon as its badge becomes visible, without network (`peekRating`).
+- **Automatically, capped:** in badge mode, when a badge becomes visible and its film is not cached, the rating is fetched without any user action, for the **first 10 distinct films per page**. Any number of links to the same film count as one film and cause one request. There is no setting for this.
+- **On user action, beyond the cap** (and always in tooltip mode):
+  - **Hover:** a trusted `mouseenter` on the link (or its badge) that rests for 150 ms. Leaving earlier cancels it.
+  - **Keyboard:** a trusted `focus` within 1 s after a real key press. `element.focus()` from page scripts produces a trusted focus event without a key press, so it never counts.
+  - Synthetic events from page scripts (`isTrusted === false`) never trigger anything.
+- A film known on the page (`ok`/`none`) is never requested again on that page. Concurrent requests and cache lookups for one film are shared.
+- An automatic load that ends in `error` (e.g. a full queue) leaves the badge idle so a hover can retry. `blocked` is shown.
 
 ## 5. Display modes (`display` setting)
 
@@ -69,12 +70,12 @@ Unofficial project, not affiliated with ČSFD.
 
 - Only the background context talks to the network.
 - Messages:
-  - `getRating` (cache, then network) is sent only after a user action (§4),
+  - `getRating` (cache, then network), sent automatically for the first 10 films per page or after a user action (§4),
   - `peekRating` (cache only),
   - `clearCache`.
   - Every message is validated, and the sender must be this extension.
 - Requests go to `https://www.csfd.cz/film/<id>/prehled/` with default browser headers and the user's csfd.cz cookies, exactly like the user opening the link.
-- **Forbidden:** circumventing ČSFD's bot protection (Anubis): no proof-of-work solving, no header spoofing, no hidden tabs/iframes/offscreen documents, no automatic background traffic.
+- **Forbidden:** circumventing ČSFD's bot protection (Anubis): no proof-of-work solving, no header spoofing, no hidden tabs/iframes/offscreen documents, no prefetching beyond §4.
 - Slow-down handling:
   - an Anubis page → `blocked`, and all fetching pauses with exponential backoff (10 min, ×2, max 6 h),
   - HTTP 429/503 → `blocked`, with the same backoff, at least as long as `Retry-After`,
@@ -113,7 +114,7 @@ Unofficial project, not affiliated with ČSFD.
 ## 8. Permissions & privacy
 
 - `storage`, `activeTab`; host permission `https://www.csfd.cz/*`; content script on `<all_urls>`.
-- No analytics or remote code. Nothing leaves the browser except the user-triggered requests to csfd.cz described in §4 and §6.
+- No analytics or remote code. Nothing leaves the browser except the requests to csfd.cz described in §4 and §6.
 
 ## 9. Budgets
 

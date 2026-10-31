@@ -3,20 +3,20 @@
 [![CI](https://github.com/tohu12/csfd-ratings-everywhere/actions/workflows/ci.yml/badge.svg)](https://github.com/tohu12/csfd-ratings-everywhere/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Česky:** Rozšíření pro Chrome, Edge a Firefox. Na jakémkoli webu najde odkazy na ČSFD, ať jsou to jen text nebo už odkazy. Textové odkazy udělá klikatelné. Po najetí myší na odkaz ukáže hodnocení filmu v procentech, jako malý odznak u odkazu nebo jako plovoucí kartu; jednou zobrazená hodnocení pak vidíš hned. Neoficiální projekt, není spojen s ČSFD.
+> **Česky:** Rozšíření pro Chrome, Edge a Firefox. Na jakémkoli webu najde odkazy na ČSFD, ať jsou to jen text nebo už odkazy. Textové odkazy udělá klikatelné. U odkazu hned ukáže hodnocení filmu v procentech (na stránkách s mnoha filmy prvních 10 hned, ostatní po najetí myší), jako malý odznak nebo jako plovoucí kartu. Neoficiální projekt, není spojen s ČSFD.
 
 A browser extension for Chrome, Edge and Firefox. It turns ČSFD film URLs on **any** website into clickable links and shows the film's ČSFD rating next to them. Unofficial; not affiliated with ČSFD.
 
 ```
 Before:  https://www.csfd.cz/film/1700849-coutures/prehled/
-After:   https://www.csfd.cz/film/1700849-coutures/prehled/ [ČSFD]  → hover →  [65 %]
-                 ↑ clickable                                                  ↑ ČSFD colours, title + count
+After:   https://www.csfd.cz/film/1700849-coutures/prehled/ [65 %]
+                 ↑ clickable                                  ↑ ČSFD colours, tooltip with title + count
 ```
 
 ## Features
 - Detects ČSFD URLs in plain text and in existing links, including series → season → episode URLs (`/film/<series>/<episode>/`).
 - Two display modes: **badge** (default) or **hover card**, which inserts nothing into the page layout.
-- **User-triggered only:** a rating is fetched when you hover a link (150 ms) or tab to it, never automatically and never on a web page's command. Ratings you have seen before show up immediately from the local cache.
+- **Shows ratings right away:** cached ratings appear instantly; the first 10 distinct films on a page load automatically, any others when you hover a link (150 ms) or tab to it. 100 links to the same film = 1 request. Web pages cannot trigger extra requests.
 - Polite to ČSFD:
   - cache (7 days),
   - max 2 parallel requests, 400 ms spacing, bounded queue,

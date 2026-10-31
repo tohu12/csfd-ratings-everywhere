@@ -8,7 +8,7 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 - Detects ČSFD film URLs in plain text and existing links on any website (series/episode URLs included).
 - Turns plain-text URLs into links.
 - Rating display: inline badge (default) or hover card ("tooltip" mode).
-- Ratings are fetched only after a real hover or keyboard focus; cached ratings show immediately.
+- Ratings show right away: cached ones instantly, the first 10 distinct films per page automatically, others after a real hover or keyboard focus.
 - Background fetching with cache, rate limiting, a bounded queue, and backoff when ČSFD asks to slow down (bot protection, 429/503 + Retry-After).
 - Popup (per-site and global switch, link count) and options page.
 - Czech, Slovak and English UI.

@@ -69,8 +69,8 @@ If you find a recurring review issue that a tool could catch, add the rule or te
 
 ## Rules no tool can check (agent responsibility)
 
-- Never circumvent ČSFD bot protection (Anubis): no PoW solving, no UA/header spoofing, no hidden tabs or iframes, no automatic background traffic. If blocked, degrade gracefully (SPEC §6).
-- csfd.cz is contacted only after a real user action on that link (SPEC §4). Never add prefetching, "warm-up" or bulk loading.
+- Never circumvent ČSFD bot protection (Anubis): no PoW solving, no UA/header spoofing, no hidden tabs or iframes, no traffic beyond SPEC §4. If blocked, degrade gracefully (SPEC §6).
+- csfd.cz is contacted only as SPEC §4 allows: the first 10 distinct visible films per page, plus real user actions. Never raise the cap or add prefetching, "warm-up" or bulk loading without the owner's decision.
 - Never add permissions or host permissions without updating SPEC §8, README and docs/PRIVACY.md.
 - Behaviour matches SPEC.md. Architecture follows the rules above (DI, one-way data flow, guards at boundaries).
 - Tests assert behaviour, not implementation, and never hit the real network. ČSFD responses come from `tests/fixtures/csfd/`.
