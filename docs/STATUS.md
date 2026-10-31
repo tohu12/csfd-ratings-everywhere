@@ -17,6 +17,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
 | Website | GitHub Pages from `/docs`: https://tohu12.github.io/csfd-ratings-everywhere/ (landing page + `PRIVACY.html`). |
 | Release pipeline | Tag `v*` → `release.yml` builds Chrome/Edge/Firefox zips (+ Firefox sources zip) into a **draft** GitHub Release. Store upload is manual for now. |
+| Next release | The v1.0.0 draft zips **predate** the blue UI accent (commit ed0c84a). Cut a new release (`/release`) before the first store upload; don't upload the v1.0.0 zips. |
 
 ## Decisions (and why). Don't revert without asking the owner
 - **Fetching** (SPEC §4):
