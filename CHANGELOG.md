@@ -4,6 +4,8 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.0.0 – 2026-10-31
+
 ### Added
 - Detects ČSFD film URLs in plain text and existing links on any website (series/episode URLs included).
 - Turns plain-text URLs into links.
