@@ -9,6 +9,7 @@ export const MESSAGE_KEYS = [
   'badgeBlocked',
   'badgeError',
   'badgeOpen',
+  'badgeUnsure',
   'untitled',
   'popupSite',
   'popupSiteUnavailable',

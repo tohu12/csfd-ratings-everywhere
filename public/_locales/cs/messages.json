@@ -48,6 +48,9 @@
   "badgeOpen": {
     "message": "Otevřít na ČSFD"
   },
+  "badgeUnsure": {
+    "message": "Nejsme si jistí, o který film jde. Hledat na ČSFD."
+  },
   "untitled": {
     "message": "Film"
   },

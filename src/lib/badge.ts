@@ -6,6 +6,8 @@ export type BadgeState =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'link' }
+  /** A VOD title without one certain ČSFD match; links to the ČSFD search. */
+  | { kind: 'unsure' }
   | { kind: 'rating'; rating: Rating };
 
 export interface Badge {
@@ -82,6 +84,9 @@ export function describeBadge(state: BadgeState, { t, formatCount }: BadgeOption
   }
   if (state.kind === 'link') {
     return { text: 'ČSFD', className: '', title: t('badgeOpen') };
+  }
+  if (state.kind === 'unsure') {
+    return { text: 'ČSFD ?', className: '', title: t('badgeUnsure') };
   }
   const { rating } = state;
   switch (rating.status) {

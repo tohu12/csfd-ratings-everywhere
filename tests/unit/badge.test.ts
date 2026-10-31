@@ -11,6 +11,7 @@ describe('describeBadge', () => {
   it.each([
     [{ kind: 'loading' }, { text: 'ČSFD', className: 'loading', title: 'badgeLoading' }],
     [{ kind: 'link' }, { text: 'ČSFD', className: '', title: 'badgeOpen' }],
+    [{ kind: 'unsure' }, { text: 'ČSFD ?', className: '', title: 'badgeUnsure' }],
     [
       { kind: 'rating', rating: { status: 'ok', percent: 78, count: 1234, title: 'Film' } },
       { text: '78 %', className: 'good', title: 'badgeRatingWithCount|Film|78|1234#' },
