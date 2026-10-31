@@ -30,6 +30,8 @@ const DAY = 24 * 60 * 60 * 1000;
 export const DEFAULT_TTL = { ok: 7 * DAY, none: DAY, error: DAY } as const;
 export const DEFAULT_LOOKUP_TTL = { found: 30 * DAY, unsure: DAY } as const;
 export const DEFAULT_MAX_ENTRIES = 2000;
+// Lookups are only needed for titles opened on VOD sites; keep the index small.
+export const DEFAULT_LOOKUP_MAX_ENTRIES = 500;
 
 interface TtlCacheOptions<K, V> {
   store: KeyValueStore;

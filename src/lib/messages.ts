@@ -54,7 +54,10 @@ function isTitleQuery(value: Record<string, unknown>): boolean {
     Array.isArray(titles) &&
     titles.length >= 1 &&
     titles.length <= MAX_TITLES &&
-    titles.every((t) => typeof t === 'string' && t.length >= 1 && t.length <= MAX_TITLE_LENGTH) &&
+    titles.every(
+      (t) =>
+        typeof t === 'string' && t.length >= 1 && t.length <= MAX_TITLE_LENGTH && t.isWellFormed(),
+    ) &&
     (year === null || (Number.isInteger(year) && Number(year) >= 1800 && Number(year) <= 2100)) &&
     (kind === null || kind === 'film' || kind === 'series')
   );

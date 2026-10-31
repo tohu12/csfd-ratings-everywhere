@@ -19,13 +19,18 @@ export interface Candidate {
 
 export type Match = number | 'ambiguous' | 'notfound';
 
+// Bounds storage per lookup entry; NFD can make normalised text longer than the input.
+const MAX_KEY_TITLES = 120;
+
 /** Lookup cache key: the same query from any page shares one entry. */
 export function lookupKey({ titles, year, kind }: TitleQuery): string {
-  return [titles.map(normalizeTitle).join('/'), year ?? '', kind ?? ''].join('|');
+  const names = titles.map(normalizeTitle).join('/').slice(0, MAX_KEY_TITLES);
+  return [names, year ?? '', kind ?? ''].join('|');
 }
 
+/** Lone surrogates (a cut emoji) are replaced: `encodeURIComponent` would throw on them. */
 export function searchUrl(title: string): string {
-  return `https://www.csfd.cz/hledat/?q=${encodeURIComponent(title)}`;
+  return `https://www.csfd.cz/hledat/?q=${encodeURIComponent(title.toWellFormed())}`;
 }
 
 // Works on strings: Chrome MV3 service workers have no DOMParser.
@@ -35,7 +40,8 @@ const FILM_HREF = /href="[^"]*\/film\/(\d+)[^"/]*\/(?:(\d+)[^"/]*\/)?"/;
 const TITLE_INFO = /class="film-title-info">((?:\s*<span class="info">[^<]*<\/span>)*)/;
 const INFO = /<span class="info">\(([^)]*)\)<\/span>/g;
 const SEARCH_NAME = /<p class="search-name">\(([^)]*)\)<\/p>/;
-const SERIES_INFO = new Set(['seriál', 'TV pořad']);
+const SERIES_INFO = new Set(['seriál', 'TV seriál', 'TV pořad', 'minisérie']);
+const FILM_INFO = new Set(['TV film', 'studentský film', 'amatérský film']);
 // Seasons and episodes are never what a VOD detail view shows.
 const SKIPPED_INFO = new Set(['série', 'epizoda']);
 
@@ -54,20 +60,33 @@ function parseArticle(chunk: string): Candidate[] {
   if (info.some((i) => SKIPPED_INFO.has(i))) {
     return [];
   }
+  const id = Number(href[2] ?? href[1]);
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return [];
+  }
   const year = info.find((i) => /^\d{4}$/.test(i));
   const original = SEARCH_NAME.exec(chunk)?.[1];
   return [
     {
-      id: Number(href[2] ?? href[1]),
+      id,
       titles: [link[2], original].flatMap((t) => (t ? [decodeEntities(t.trim())] : [])),
       year: year ? Number(year) : null,
-      kind: info.some((i) => SERIES_INFO.has(i)) ? 'series' : 'film',
+      kind: kindOf(info.filter((i) => i !== year)),
     },
   ];
 }
 
+/** No type label means a feature film; an unknown label is left open rather than guessed. */
+function kindOf(labels: string[]): TitleKind | null {
+  if (labels.some((l) => SERIES_INFO.has(l))) {
+    return 'series';
+  }
+  return labels.every((l) => FILM_INFO.has(l)) ? 'film' : null;
+}
+
 /**
  * The single candidate that is certainly the queried title, or why there is none.
+ * Without a year on the VOD side, only a title with a single ČSFD entry of that name matches.
  * Titles must match exactly after normalisation. A film's year may be off by one (premiere vs
  * release). VOD services show a series' latest season year, so a series may have started earlier.
  */
@@ -79,7 +98,8 @@ export function pickMatch(query: TitleQuery, candidates: Candidate[]): Match {
       kindFits(query.kind, c.kind) &&
       yearFits(query, c.year),
   );
-  const exact = fits.length > 1 ? fits.filter((c) => c.year === query.year) : fits;
+  const exact =
+    fits.length > 1 && query.year !== null ? fits.filter((c) => c.year === query.year) : fits;
   const [only, ...rest] = exact;
   if (only && rest.length === 0) {
     return only.id;
@@ -91,9 +111,13 @@ function kindFits(wanted: TitleKind | null, actual: TitleKind | null): boolean {
   return wanted === null || actual === null || wanted === actual;
 }
 
+/** A candidate without a year never fits a dated query: it could be any film of that name. */
 function yearFits(query: TitleQuery, year: number | null): boolean {
-  if (query.year === null || year === null) {
+  if (query.year === null) {
     return true;
+  }
+  if (year === null) {
+    return false;
   }
   return query.kind === 'series' ? year <= query.year : Math.abs(year - query.year) <= 1;
 }

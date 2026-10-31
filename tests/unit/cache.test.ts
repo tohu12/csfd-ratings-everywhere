@@ -98,6 +98,15 @@ describe('createRatingCache', () => {
     expect(store.data.get('ratings:index')).toEqual([3]);
   });
 
+  it('reads entries written before the cache became generic ({ rating, expires } under rating:<id>)', async () => {
+    store = memoryStore({ 'rating:1': { rating: OK, expires: 9e15 }, 'ratings:index': [1] });
+    cache = createRatingCache({ store, now: () => time, maxEntries: 3, ttlMs: DEFAULT_TTL });
+    expect(await cache.get(1)).toEqual(OK);
+    await cache.set(2, NONE);
+    expect(store.data.get('rating:2')).toEqual({ rating: NONE, expires: time + DEFAULT_TTL.none });
+    expect(store.data.get('ratings:index')).toEqual([1, 2]);
+  });
+
   it('drops non-integer ids from a persisted index', async () => {
     store = memoryStore({ 'ratings:index': [1, 'x', 2.5, 2] });
     cache = createRatingCache({ store, now: () => time, maxEntries: 3, ttlMs: DEFAULT_TTL });

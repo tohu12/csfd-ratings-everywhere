@@ -32,6 +32,7 @@ describe('isBackgroundRequest', () => {
     { type: 'findTitle', titles: ['x'.repeat(201)], year: null, kind: null },
     { type: 'findTitle', titles: ['a', 'b', 'c'], year: null, kind: null },
     { type: 'findTitle', titles: [1], year: null, kind: null },
+    { type: 'findTitle', titles: ['x\uD800'], year: null, kind: null },
     { type: 'findTitle', titles: 'Duna', year: null, kind: null },
     { type: 'findTitle', titles: ['Duna'], year: 1799, kind: null },
     { type: 'findTitle', titles: ['Duna'], year: 2021.5, kind: null },

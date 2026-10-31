@@ -2,6 +2,7 @@ import { createBackoff } from './backoff';
 import {
   createLookupCache,
   createRatingCache,
+  DEFAULT_LOOKUP_MAX_ENTRIES,
   DEFAULT_LOOKUP_TTL,
   DEFAULT_MAX_ENTRIES,
   DEFAULT_TTL,
@@ -36,7 +37,7 @@ export function createBackgroundApp(deps: BackgroundDeps): MessageHandler {
   const lookups = createLookupCache({
     store: deps.local,
     now: deps.now,
-    maxEntries: DEFAULT_MAX_ENTRIES,
+    maxEntries: DEFAULT_LOOKUP_MAX_ENTRIES,
     ttlMs: DEFAULT_LOOKUP_TTL,
   });
   const service = createRatingService({

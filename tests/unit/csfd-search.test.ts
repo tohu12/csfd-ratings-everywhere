@@ -22,6 +22,12 @@ const series = (id: number, titles: string[], year: number | null): Candidate =>
 });
 
 describe('searchUrl', () => {
+  it('survives a lone surrogate from a title cut in the middle of an emoji', () => {
+    expect(searchUrl(`Film ${'😀'.slice(0, 1)}`)).toBe(
+      'https://www.csfd.cz/hledat/?q=Film%20%EF%BF%BD',
+    );
+  });
+
   it('builds the ČSFD search URL with an encoded query', () => {
     expect(searchUrl('Špetka lásky & co')).toBe(
       'https://www.csfd.cz/hledat/?q=%C5%A0petka%20l%C3%A1sky%20%26%20co',
@@ -73,12 +79,22 @@ describe('pickMatch', () => {
     expect(pickMatch({ titles: ['Duna'], year: 2021, kind: 'film' }, close)).toBe('ambiguous');
   });
 
-  it('ignores the kind or year when either side does not know it', () => {
-    const unknown: Candidate = { id: 9, titles: ['Duna'], year: null, kind: null };
+  it('ignores the kind when either side does not know it', () => {
+    const unknown: Candidate = { id: 9, titles: ['Duna'], year: 2021, kind: null };
     expect(pickMatch({ titles: ['Duna'], year: 2021, kind: 'film' }, [unknown])).toBe(9);
     expect(
       pickMatch({ titles: ['Duna'], year: null, kind: null }, [series(5, ['Duna'], 2024)]),
     ).toBe(5);
+  });
+
+  it('never matches a dated query to a candidate without a year', () => {
+    const undated: Candidate = { id: 9, titles: ['Duna'], year: null, kind: 'film' };
+    expect(pickMatch({ titles: ['Duna'], year: 2021, kind: 'film' }, [undated])).toBe('notfound');
+  });
+
+  it('is ambiguous without a VOD year even if one candidate has no year either', () => {
+    const candidates = [film(1, ['Duna'], 1984), film(2, ['Duna'], null)];
+    expect(pickMatch({ titles: ['Duna'], year: null, kind: 'film' }, candidates)).toBe('ambiguous');
   });
 
   it('is notfound without a title match', () => {
@@ -118,6 +134,25 @@ describe('parseSearchPage', () => {
     expect(parseSearchPage('<html><p>Nic nenalezeno</p></html>')).toEqual([]);
   });
 
+  it('labels TV films as films, unknown types as open, and drops invalid ids', () => {
+    const article = (href: string, label: string) =>
+      `<article><a href="${href}" class="film-title-name">X</a><span class="film-title-info">` +
+      `<span class="info">(2020)</span>${label ? `<span class="info">(${label})</span>` : ''}</span></article>`;
+    expect(
+      parseSearchPage(
+        article('/film/1-x/', 'TV film') +
+          article('/film/2-x/', 'koncert') +
+          article('/film/3-x/', 'TV seriál') +
+          article('/film/0-x/', '') +
+          article('/film/99999999999999999999-x/', ''),
+      ).map((c) => [c.id, c.kind]),
+    ).toEqual([
+      [1, 'film'],
+      [2, null],
+      [3, 'series'],
+    ]);
+  });
+
   it('skips episodes', () => {
     const html =
       '<article><a href="/film/1-s/2-e/" class="film-title-name">Díl 1</a>' +
@@ -132,5 +167,11 @@ describe('lookupKey', () => {
       'spetka lasky/salted love|2026|series',
     );
     expect(lookupKey({ titles: ['Duna'], year: null, kind: null })).toBe('duna||');
+  });
+
+  it('caps the title part of the key', () => {
+    expect(
+      lookupKey({ titles: ['a'.repeat(200), 'b'.repeat(200)], year: 2021, kind: 'film' }),
+    ).toBe(`${'a'.repeat(120)}|2021|film`);
   });
 });
