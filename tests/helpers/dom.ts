@@ -9,7 +9,7 @@ export function loadPage(name: string): HTMLElement {
 }
 
 /** Loads an extension page's markup (scripts and styles stripped) into the document. */
-export function loadExtensionPage(entry: 'popup' | 'options'): void {
+export function loadExtensionPage(entry: 'popup' | 'options' | 'welcome'): void {
   const html = readFileSync(
     join(import.meta.dirname, '..', '..', 'src', 'entrypoints', entry, 'index.html'),
     'utf8',

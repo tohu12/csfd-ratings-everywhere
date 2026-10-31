@@ -28,6 +28,17 @@ export const MESSAGE_KEYS = [
   'optionsCacheCleared',
   'optionsSaved',
   'optionsDisclaimer',
+  'welcomeTitle',
+  'welcomeIntro',
+  'welcomeHowTitle',
+  'welcomeHowLinks',
+  'welcomeHowAuto',
+  'welcomeHowHover',
+  'welcomeColorsTitle',
+  'welcomeColorGood',
+  'welcomeColorAverage',
+  'welcomeColorBad',
+  'welcomeSettingsHint',
 ] as const;
 
 export type MessageKey = (typeof MESSAGE_KEYS)[number];

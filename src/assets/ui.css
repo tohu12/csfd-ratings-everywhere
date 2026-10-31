@@ -90,3 +90,49 @@ output {
   margin-left: 8px;
   color: var(--muted);
 }
+
+body.welcome main {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 16px;
+  font-size: 15px;
+}
+body.welcome h1 {
+  font-size: 24px;
+}
+h2 {
+  margin: 24px 0 8px;
+  font-size: 16px;
+}
+.legend {
+  list-style: none;
+  padding: 0;
+}
+.legend li {
+  margin: 6px 0;
+}
+.pill {
+  display: inline-block;
+  min-width: 3.2em;
+  padding: 0 0.5em;
+  border-radius: 1em;
+  font:
+    600 12px / 1.8 system-ui,
+    sans-serif;
+  text-align: center;
+  color: #fff;
+}
+/* Same colours as the in-page badge (src/lib/badge.ts). */
+.pill.good {
+  background: #ba0305;
+}
+.pill.average {
+  background: #4a7ab0;
+}
+.pill.bad {
+  background: #535353;
+}
+.pill.none {
+  background: #b9b9b9;
+  color: #222;
+}

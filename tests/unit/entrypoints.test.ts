@@ -49,6 +49,15 @@ describe('background entrypoint', () => {
     await expect(deliver({ type: 'clearCache' }, 'evil')).resolves.toBeUndefined();
   });
 
+  it('opens the welcome page on install', async () => {
+    const create = vi.fn(async () => ({}));
+    fakeBrowser.tabs.create = create as unknown as typeof fakeBrowser.tabs.create;
+    const { default: background } = await import('@/entrypoints/background');
+    background.main();
+    await fakeBrowser.runtime.onInstalled.trigger({ reason: 'install' } as never);
+    expect(create).toHaveBeenCalledWith({ url: fakeBrowser.runtime.getURL('/welcome.html') });
+  });
+
   it('spaces consecutive ČSFD requests with a real timer', async () => {
     vi.useFakeTimers();
     const fetchMock = vi.fn(async () => new Response(fixture('csfd/film.html')));
@@ -162,6 +171,18 @@ describe('popup entrypoint', () => {
     expect(document.documentElement.lang).toBe('cs');
     expect(query).toHaveBeenCalledWith({ active: true, currentWindow: true });
     expect(fakeBrowser.tabs.sendMessage).toHaveBeenCalledWith(5, { type: 'getStats' });
+    document.getElementById('open-options')?.click();
+    expect(openOptionsPage).toHaveBeenCalled();
+  });
+});
+
+describe('welcome entrypoint', () => {
+  it('boots the welcome page', async () => {
+    loadExtensionPage('welcome');
+    const openOptionsPage = vi.fn(async () => {});
+    fakeBrowser.runtime.openOptionsPage = openOptionsPage;
+    await import('@/entrypoints/welcome/main');
+    expect(document.title).toBe('welcomeTitle');
     document.getElementById('open-options')?.click();
     expect(openOptionsPage).toHaveBeenCalled();
   });

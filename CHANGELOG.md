@@ -4,6 +4,14 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.1.0 – 2026-10-31
+
+### Added
+- Welcome page on first install: how it works and what the colours mean.
+
+### Changed
+- Popup and settings use the extension's blue instead of ČSFD red, so it does not look like an official ČSFD product.
+
 ## 1.0.0 – 2026-10-31
 
 ### Added

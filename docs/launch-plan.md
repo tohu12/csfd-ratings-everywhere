@@ -24,7 +24,7 @@ Internal working document (not published on the website). Sources: Chrome Web St
 - [x] Website, support, privacy URLs (GitHub Pages)
 - [x] Honest privacy disclosure (Firefox `websiteContent`)
 - [ ] Run **Store assets** workflow → use the localized `-cs` screenshots for the Czech listing
-- [ ] Decide: onboarding page on install (see "Proposed product improvements")
+- [x] Onboarding page on install (v1.1.0)
 - [ ] Optional but recommended: write to ČSFD (draft below)
 
 ### Submission day
@@ -48,12 +48,11 @@ Post only where self-promotion is allowed, read each community's rules first, an
 4. **Czech tech media** (e.g. Živě.cz, Lupa.cz, Jablíčkář): a short tip e-mail with screenshots and the open-source angle.
 5. **ČSFD itself:** only after their consent (below). A mention by ČSFD would be the single biggest boost.
 
-## Proposed product improvements for growth
+## Product improvements for growth
 
-Not implemented yet; decide before launch:
-- **Onboarding page on install:** explains the badge colours and the hover rule, links to a demo and to the settings. It addresses the "onboarding" ranking factor and lowers early uninstalls.
-- **Gentle rating prompt:** after N days of use, a small link in the popup ("Líbí se vám? Ohodnoťte rozšíření"). It must not be incentivized and must not nag.
-- **Uninstall feedback URL** (`runtime.setUninstallURL`) to a one-question form. It explains uninstalls without in-extension analytics.
+- **Onboarding page on install:** done in v1.1.0.
+- **Rating link in the popup** (e.g. "Líbí se vám? Ohodnoťte rozšíření"): add after the listings are live, since it needs the per-store URLs. Keep it static: no nagging, no incentives.
+- ~~Uninstall feedback URL~~: rejected by the owner (not useful enough).
 
 ## Draft e-mail to ČSFD
 

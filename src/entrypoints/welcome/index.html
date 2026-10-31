@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ČSFD</title>
+    <link rel="stylesheet" href="../../assets/ui.css" />
+  </head>
+  <body class="welcome">
+    <main>
+      <h1 data-i18n="welcomeTitle">Welcome!</h1>
+      <p data-i18n="welcomeIntro">From now on, links to ČSFD on any website show the film's rating.</p>
+      <h2 data-i18n="welcomeHowTitle">How it works</h2>
+      <ul>
+        <li data-i18n="welcomeHowLinks">Plain-text ČSFD URLs become clickable links.</li>
+        <li data-i18n="welcomeHowAuto">Ratings of the first 10 films on a page appear right away.</li>
+        <li data-i18n="welcomeHowHover">For other films, hover the link for a moment.</li>
+      </ul>
+      <h2 data-i18n="welcomeColorsTitle">What the colours mean</h2>
+      <ul class="legend">
+        <li><span class="pill good">78 %</span> <span data-i18n="welcomeColorGood">70 % and more</span></li>
+        <li><span class="pill average">54 %</span> <span data-i18n="welcomeColorAverage">30–69 %</span></li>
+        <li><span class="pill bad">23 %</span> <span data-i18n="welcomeColorBad">less than 30 %</span></li>
+        <li><span class="pill none">– %</span> <span data-i18n="badgeNone">No rating yet</span></li>
+      </ul>
+      <p data-i18n="welcomeSettingsHint">You can turn it off for a site in the toolbar icon, or switch to hover cards in the settings.</p>
+      <button id="open-options" type="button" data-i18n="popupOptions">Settings</button>
+      <p><small data-i18n="optionsDisclaimer">Unofficial extension, not affiliated with ČSFD.</small></p>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

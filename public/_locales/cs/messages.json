@@ -104,5 +104,38 @@
   },
   "optionsDisclaimer": {
     "message": "Neoficiální rozšíření, není spojeno s ČSFD. Hodnocení se čte přímo z csfd.cz a ukládá jen ve tvém prohlížeči."
+  },
+  "welcomeTitle": {
+    "message": "Vítejte v ČSFD hodnocení všude!"
+  },
+  "welcomeIntro": {
+    "message": "Od teď u odkazů na ČSFD na jakémkoli webu uvidíte hodnocení filmu."
+  },
+  "welcomeHowTitle": {
+    "message": "Jak to funguje"
+  },
+  "welcomeHowLinks": {
+    "message": "Textové odkazy na ČSFD se změní na klikatelné."
+  },
+  "welcomeHowAuto": {
+    "message": "U prvních 10 filmů na stránce se hodnocení ukáže hned."
+  },
+  "welcomeHowHover": {
+    "message": "U dalších filmů stačí na odkaz chvilku najet myší."
+  },
+  "welcomeColorsTitle": {
+    "message": "Co znamenají barvy"
+  },
+  "welcomeColorGood": {
+    "message": "70 % a více"
+  },
+  "welcomeColorAverage": {
+    "message": "30–69 %"
+  },
+  "welcomeColorBad": {
+    "message": "méně než 30 %"
+  },
+  "welcomeSettingsHint": {
+    "message": "Na konkrétním webu rozšíření vypnete přes jeho ikonu v liště, v nastavení můžete místo odznaků zapnout plovoucí kartu."
   }
 }

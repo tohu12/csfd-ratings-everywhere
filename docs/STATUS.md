@@ -1,6 +1,6 @@
 # Project status
 
-Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-10-31 (v1.0.0).
+Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-10-31 (v1.1.0).
 
 ## In one paragraph
 "ČSFD hodnocení všude / ČSFD Ratings Everywhere" is a WXT MV3 browser extension (Chrome, Edge, Firefox).
@@ -12,12 +12,12 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 ## State
 | Area | State |
 |---|---|
-| Code | v1.0.0 tagged; `main` green. 307 unit tests at 100 % coverage, 9 Playwright E2E, size budgets, Firefox lint 0/0. |
+| Code | v1.1.0 (welcome page on install, blue UI accent); `main` green. 307 unit tests at 100 % coverage, 9 Playwright E2E, size budgets, Firefox lint 0/0. |
 | Real-world check | 2026-10-31, headed Chrome with the owner on 8 warcenter.cz topics: **8/8 correct**, incl. series-episode URLs and unrated films. Extension requests to csfd.cz **pass Anubis**. |
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
 | Website | GitHub Pages from `/docs`: https://tohu12.github.io/csfd-ratings-everywhere/ (landing page + `PRIVACY.html`). |
 | Release pipeline | Tag `v*` → `release.yml` builds Chrome/Edge/Firefox zips (+ Firefox sources zip) into a **draft** GitHub Release. Store upload is manual for now. |
-| Next release | The v1.0.0 draft zips **predate** the blue UI accent (commit ed0c84a). Cut a new release (`/release`) before the first store upload; don't upload the v1.0.0 zips. |
+| Store packages | Use the **v1.1.0** release zips (v1.0.0 predates the UI colour change and the welcome page). |
 
 ## Decisions (and why). Don't revert without asking the owner
 - **Fetching** (SPEC §4):
@@ -33,7 +33,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 
 ## Open items (owner decides / acts)
 1. Create store developer accounts and submit (CWS one-time fee, Edge Partner Center, AMO). Follow [launch-plan.md](launch-plan.md).
-2. Decide on proposed growth features: onboarding page on install, gentle rating prompt, uninstall feedback URL. They are described in the launch plan and **not implemented**.
+2. **Rating link in the popup:** add it once the store listing URLs exist (it needs per-store URLs). The owner wants only genuinely useful features. Onboarding is done (v1.1.0). The **uninstall survey was rejected** by the owner: don't add it.
 3. Optionally send the drafted e-mail to ČSFD asking for consent or an API.
 4. Replace the synthetic film fixtures in `tests/fixtures/csfd/` with real pages saved from a browser ([fixture README](../tests/fixtures/csfd/README.md)).
 5. After the first manual store upload: automate submission from CI (credentials as GitHub secrets, gated environment).

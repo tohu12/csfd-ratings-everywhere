@@ -111,6 +111,11 @@ Unofficial project, not affiliated with ČSFD.
 - Every change is a read-modify-write of the latest stored value, so the popup and options page never overwrite each other.
 - Changes apply on the next page load.
 
+## 7a. Onboarding
+
+- On a fresh install (`runtime.onInstalled`, reason `install`), the extension opens its welcome page (`welcome.html`) once. Updates never open it.
+- The page explains the linking, the "first 10 automatically, the rest on hover" rule, and the colour legend, and links to the settings. Texts are localised.
+
 ## 8. Permissions & privacy
 
 - `storage`, `activeTab`; host permission `https://www.csfd.cz/*`; content script on `<all_urls>`.

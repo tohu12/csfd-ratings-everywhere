@@ -10,6 +10,15 @@ test.beforeEach(async ({ extensionId }) => {
   expect(extensionId).toMatch(/^[a-p]{32}$/);
 });
 
+test('opens the welcome page right after installation', async ({ context }) => {
+  const welcome =
+    context.pages().find((p) => p.url().endsWith('/welcome.html')) ??
+    (await context.waitForEvent('page', { predicate: (p) => p.url().endsWith('/welcome.html') }));
+  await expect(welcome.locator('h1')).toHaveText(/ČSFD/);
+  await expect(welcome.locator('.legend .pill')).toHaveCount(4);
+  await welcome.screenshot({ path: 'test-results/welcome.png' });
+});
+
 test('linkifies plain-text URLs and loads visible ratings right away', async ({
   context,
   csfdRequests,

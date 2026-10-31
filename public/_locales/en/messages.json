@@ -104,5 +104,38 @@
   },
   "optionsDisclaimer": {
     "message": "Unofficial extension, not affiliated with ČSFD. Ratings are read directly from csfd.cz and stored only in your browser."
+  },
+  "welcomeTitle": {
+    "message": "Welcome to ČSFD Ratings Everywhere!"
+  },
+  "welcomeIntro": {
+    "message": "From now on, links to ČSFD on any website show the film's rating."
+  },
+  "welcomeHowTitle": {
+    "message": "How it works"
+  },
+  "welcomeHowLinks": {
+    "message": "Plain-text ČSFD URLs become clickable links."
+  },
+  "welcomeHowAuto": {
+    "message": "Ratings of the first 10 films on a page appear right away."
+  },
+  "welcomeHowHover": {
+    "message": "For other films, hover the link for a moment."
+  },
+  "welcomeColorsTitle": {
+    "message": "What the colours mean"
+  },
+  "welcomeColorGood": {
+    "message": "70 % and more"
+  },
+  "welcomeColorAverage": {
+    "message": "30–69 %"
+  },
+  "welcomeColorBad": {
+    "message": "less than 30 %"
+  },
+  "welcomeSettingsHint": {
+    "message": "Turn it off for a site via its toolbar icon, or switch to hover cards in the settings."
   }
 }

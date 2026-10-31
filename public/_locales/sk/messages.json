@@ -104,5 +104,38 @@
   },
   "optionsDisclaimer": {
     "message": "Neoficiálne rozšírenie, nie je spojené s ČSFD. Hodnotenie sa číta priamo z csfd.cz a ukladá sa len v tvojom prehliadači."
+  },
+  "welcomeTitle": {
+    "message": "Vitajte v ČSFD hodnotenie všade!"
+  },
+  "welcomeIntro": {
+    "message": "Odteraz pri odkazoch na ČSFD na akomkoľvek webe uvidíte hodnotenie filmu."
+  },
+  "welcomeHowTitle": {
+    "message": "Ako to funguje"
+  },
+  "welcomeHowLinks": {
+    "message": "Textové odkazy na ČSFD sa zmenia na klikateľné."
+  },
+  "welcomeHowAuto": {
+    "message": "Pri prvých 10 filmoch na stránke sa hodnotenie ukáže hneď."
+  },
+  "welcomeHowHover": {
+    "message": "Pri ďalších filmoch stačí na odkaz chvíľu prejsť myšou."
+  },
+  "welcomeColorsTitle": {
+    "message": "Čo znamenajú farby"
+  },
+  "welcomeColorGood": {
+    "message": "70 % a viac"
+  },
+  "welcomeColorAverage": {
+    "message": "30–69 %"
+  },
+  "welcomeColorBad": {
+    "message": "menej ako 30 %"
+  },
+  "welcomeSettingsHint": {
+    "message": "Na konkrétnom webe rozšírenie vypnete cez jeho ikonu v lište, v nastaveniach môžete namiesto odznakov zapnúť plávajúcu kartu."
   }
 }
