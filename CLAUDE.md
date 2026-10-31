@@ -1,4 +1,5 @@
 @AGENTS.md
+@docs/STATUS.md
 
 ## Claude Code specifics
 
@@ -24,4 +25,5 @@ The harness lives in `.claude/` and is committed:
 2. Write or extend the failing test first.
 3. Implement until `pnpm check` is green. The Stop hook enforces it.
 4. Run `code-reviewer` and `perf-reviewer` on the diff (`security-reviewer` too when DOM insertion, messaging, permissions or the manifest change). Fix confirmed findings.
-5. Small commit with a Conventional Commit message. Never push or publish without the user asking.
+5. Update `docs/STATUS.md` if the state, a decision or an open item changed.
+6. Small commit with a Conventional Commit message. Never push or publish without the user asking.

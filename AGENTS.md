@@ -6,6 +6,8 @@ Instructions for AI coding agents (Claude Code, Codex, Cursor, …) working in t
 
 A WXT (Manifest V3) browser extension for Chrome, Edge and Firefox. It linkifies ČSFD film URLs on any page and shows the film's rating, as an inline badge or a hover card.
 
+**Start with [docs/STATUS.md](docs/STATUS.md):** current state, decisions already made by the owner, open items and gotchas. Keep it updated.
+
 Behaviour is specified in **SPEC.md**. Read it before changing behaviour and update it in the same change.
 
 ## Commands

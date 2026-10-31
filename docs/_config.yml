@@ -6,3 +6,4 @@ theme: jekyll-theme-cayman
 exclude:
   - store-listing.md
   - launch-plan.md
+  - STATUS.md
