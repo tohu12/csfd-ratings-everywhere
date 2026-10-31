@@ -115,6 +115,7 @@ Unofficial project, not affiliated with ČSFD.
 
 - `storage`, `activeTab`; host permission `https://www.csfd.cz/*`; content script on `<all_urls>`.
 - No analytics or remote code. Nothing leaves the browser except the requests to csfd.cz described in §4 and §6.
+- Those requests reveal to ČSFD which films are linked on pages the user views. Firefox declares this as `data_collection_permissions.required: ["websiteContent"]`; Chrome's privacy form says the same.
 
 ## 9. Budgets
 

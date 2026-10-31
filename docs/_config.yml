@@ -1,0 +1,8 @@
+title: ČSFD hodnocení všude
+description: Rozšíření pro Chrome, Edge a Firefox – u každého odkazu na ČSFD ukáže hodnocení filmu.
+lang: cs
+theme: jekyll-theme-cayman
+# Internal working documents stay in the repo but are not published on the site.
+exclude:
+  - store-listing.md
+  - launch-plan.md

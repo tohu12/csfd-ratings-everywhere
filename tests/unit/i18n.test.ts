@@ -29,6 +29,10 @@ describe('locales', () => {
   it.each(LOCALES)('%s keeps the store name within 75 characters', (lang) => {
     expect(messages(lang)['extName']?.message.length).toBeLessThanOrEqual(75);
   });
+
+  it.each(LOCALES)('%s keeps the store summary within 132 characters', (lang) => {
+    expect(messages(lang)['extDescription']?.message.length).toBeLessThanOrEqual(132);
+  });
 });
 
 describe('createTranslator', () => {
