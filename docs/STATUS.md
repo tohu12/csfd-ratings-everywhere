@@ -12,7 +12,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 ## State
 | Area | State |
 |---|---|
-| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** detail views on Netflix, Disney+, HBO Max (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+ (generic detector) → ČSFD search → rating. 456 unit tests at 100 % coverage, 13 Playwright E2E, size budgets (VOD script 6.2 / 7 kB). Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. |
+| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** detail views on Netflix, Disney+, HBO Max (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+ (generic detector) → ČSFD search → rating. 474 unit tests at 100 % coverage, 13 Playwright E2E, size budgets (VOD script 6.4 / 7 kB). Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. |
 | VOD real-world check | **Not done yet.** Detection verified on DOM captured 2026-10-31 from the owner's logged-in sessions (`tests/fixtures/pages/vod/`). The search parser is tested only on a **synthetic** ČSFD search page. Unknown: whether `/hledat/` requests pass Anubis like `/film/` ones. |
 | Real-world check | 2026-10-31, headed Chrome with the owner on 8 warcenter.cz topics: **8/8 correct**, incl. series-episode URLs and unrated films. Extension requests to csfd.cz **pass Anubis**. |
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
