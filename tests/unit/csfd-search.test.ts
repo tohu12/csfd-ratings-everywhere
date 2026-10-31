@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { type Candidate, pickMatch, searchUrl } from '@/lib/csfd-search';
+import { type Candidate, parseSearchPage, pickMatch, searchUrl } from '@/lib/csfd-search';
+import { fixture } from '../helpers/fixtures';
 
 const film = (id: number, titles: string[], year: number | null): Candidate => ({
   id,
@@ -79,5 +80,42 @@ describe('pickMatch', () => {
     expect(
       pickMatch({ titles: ['Duna'], year: 2021, kind: 'film' }, [film(1, ['Dunaj'], 2021)]),
     ).toBe('notfound');
+  });
+});
+
+describe('parseSearchPage', () => {
+  it('reads films and series with year, kind and original names; skips seasons and users', () => {
+    expect(parseSearchPage(fixture('csfd/search.html'))).toEqual([
+      { id: 1234, titles: ['Duna', 'Dune'], year: 2021, kind: 'film' },
+      { id: 2222, titles: ['Duna', 'Dune'], year: 1984, kind: 'film' },
+      { id: 3333, titles: ['Duna: Část druhá', 'Dune: Part Two'], year: 2024, kind: 'film' },
+      { id: 4444, titles: ['Tom & Jerry: Duna'], year: 2000, kind: 'film' },
+      { id: 5555, titles: ['Duna: Proroctví', 'Dune: Prophecy'], year: 2024, kind: 'series' },
+    ]);
+  });
+
+  it('picks the 2021 Duna from the fixture', () => {
+    const candidates = parseSearchPage(fixture('csfd/search.html'));
+    expect(pickMatch({ titles: ['Duna'], year: 2021, kind: 'film' }, candidates)).toBe(1234);
+    expect(pickMatch({ titles: ['Dune'], year: null, kind: 'film' }, candidates)).toBe('ambiguous');
+    expect(pickMatch({ titles: ['Dune: Prophecy'], year: 2024, kind: 'series' }, candidates)).toBe(
+      5555,
+    );
+  });
+
+  it('tolerates results without a year and pages without results', () => {
+    const html =
+      '<article><h3><a href="/film/9-x/" class="film-title-name">X</a>' +
+      '<span class="film-title-info"><span class="info">(TV pořad)</span></span></h3></article>' +
+      '<article><a class="film-title-name">no href</a></article>';
+    expect(parseSearchPage(html)).toEqual([{ id: 9, titles: ['X'], year: null, kind: 'series' }]);
+    expect(parseSearchPage('<html><p>Nic nenalezeno</p></html>')).toEqual([]);
+  });
+
+  it('skips episodes', () => {
+    const html =
+      '<article><a href="/film/1-s/2-e/" class="film-title-name">Díl 1</a>' +
+      '<span class="film-title-info"><span class="info">(epizoda)</span></span></article>';
+    expect(parseSearchPage(html)).toEqual([]);
   });
 });

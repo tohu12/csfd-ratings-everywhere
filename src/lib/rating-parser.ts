@@ -112,7 +112,8 @@ function safeJsonParse(text: string): unknown {
   }
 }
 
-function decodeEntities(text: string): string {
+/** Decodes the HTML entities ČSFD uses in titles. */
+export function decodeEntities(text: string): string {
   // `&amp;` last, so `&amp;lt;` stays the literal text `&lt;`.
   return text
     .replace(/&#(\d+);/g, (whole, dec: string) => fromCodePoint(Number(dec), whole))

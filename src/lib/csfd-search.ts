@@ -1,8 +1,9 @@
+import { decodeEntities } from './rating-parser';
 import { normalizeTitle, type TitleKind } from './vod/detect';
 
 /** What a VOD page tells us about a title (see `detectTitle`). */
 export interface TitleQuery {
-  titles: string[];
+  titles: readonly string[];
   year: number | null;
   kind: TitleKind | null;
 }
@@ -20,6 +21,44 @@ export type Match = number | 'ambiguous' | 'notfound';
 
 export function searchUrl(title: string): string {
   return `https://www.csfd.cz/hledat/?q=${encodeURIComponent(title)}`;
+}
+
+// Works on strings: Chrome MV3 service workers have no DOMParser.
+const ARTICLE = /<article\b/;
+const TITLE_LINK = /<a\b([^>]*\bfilm-title-name\b[^>]*)>([^<]*)<\/a>/;
+const FILM_HREF = /href="[^"]*\/film\/(\d+)[^"/]*\/(?:(\d+)[^"/]*\/)?"/;
+const TITLE_INFO = /class="film-title-info">((?:\s*<span class="info">[^<]*<\/span>)*)/;
+const INFO = /<span class="info">\(([^)]*)\)<\/span>/g;
+const SEARCH_NAME = /<p class="search-name">\(([^)]*)\)<\/p>/;
+const SERIES_INFO = new Set(['seriál', 'TV pořad']);
+// Seasons and episodes are never what a VOD detail view shows.
+const SKIPPED_INFO = new Set(['série', 'epizoda']);
+
+/** Film and series results of a ČSFD search page, in page order. */
+export function parseSearchPage(html: string): Candidate[] {
+  return html.split(ARTICLE).slice(1).flatMap(parseArticle);
+}
+
+function parseArticle(chunk: string): Candidate[] {
+  const link = TITLE_LINK.exec(chunk);
+  const href = link && FILM_HREF.exec(String(link[1]));
+  if (!link || !href) {
+    return [];
+  }
+  const info = [...String(TITLE_INFO.exec(chunk)?.[1]).matchAll(INFO)].map((m) => String(m[1]));
+  if (info.some((i) => SKIPPED_INFO.has(i))) {
+    return [];
+  }
+  const year = info.find((i) => /^\d{4}$/.test(i));
+  const original = SEARCH_NAME.exec(chunk)?.[1];
+  return [
+    {
+      id: Number(href[2] ?? href[1]),
+      titles: [link[2], original].flatMap((t) => (t ? [decodeEntities(t.trim())] : [])),
+      year: year ? Number(year) : null,
+      kind: info.some((i) => SERIES_INFO.has(i)) ? 'series' : 'film',
+    },
+  ];
 }
 
 /**

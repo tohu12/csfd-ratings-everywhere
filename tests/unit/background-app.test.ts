@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createBackgroundApp, createFetchPage, createMessageHandler } from '@/lib/background-app';
-import type { RatingCache } from '@/lib/cache';
+import type { LookupCache, RatingCache } from '@/lib/cache';
 import type { RatingService } from '@/lib/rating-service';
 import { fixture } from '../helpers/fixtures';
 import { memoryStore } from '../helpers/memory-store';
@@ -11,9 +11,11 @@ describe('createMessageHandler', () => {
   const service: RatingService = {
     getRating: vi.fn(async () => ({ status: 'error' }) as const),
     peekRating: vi.fn(async () => null),
+    findTitle: vi.fn(async () => ({ status: 'unsure' }) as const),
   };
   const cache = { clear: vi.fn(async () => {}) } as unknown as RatingCache;
-  const handle = createMessageHandler({ service, cache, runtimeId: 'self' });
+  const lookups = { clear: vi.fn(async () => {}) } as unknown as LookupCache;
+  const handle = createMessageHandler({ service, caches: [cache, lookups], runtimeId: 'self' });
 
   it('answers getRating from the service', async () => {
     await expect(handle({ type: 'getRating', id: 5 }, SELF)).resolves.toEqual({ status: 'error' });
@@ -25,9 +27,16 @@ describe('createMessageHandler', () => {
     expect(service.peekRating).toHaveBeenCalledWith(6);
   });
 
-  it('clears the cache', async () => {
+  it('answers findTitle from the service with only the query fields', async () => {
+    const message = { type: 'findTitle', titles: ['Duna'], year: 2021, kind: 'film', extra: 1 };
+    await expect(handle(message, SELF)).resolves.toEqual({ status: 'unsure' });
+    expect(service.findTitle).toHaveBeenCalledWith({ titles: ['Duna'], year: 2021, kind: 'film' });
+  });
+
+  it('clears the rating and lookup caches', async () => {
     await expect(handle({ type: 'clearCache' }, SELF)).resolves.toBe(true);
     expect(cache.clear).toHaveBeenCalled();
+    expect(lookups.clear).toHaveBeenCalled();
   });
 
   it('ignores invalid messages and foreign senders', () => {

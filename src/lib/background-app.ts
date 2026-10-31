@@ -1,5 +1,13 @@
 import { createBackoff } from './backoff';
-import { createRatingCache, DEFAULT_MAX_ENTRIES, DEFAULT_TTL, type RatingCache } from './cache';
+import {
+  createLookupCache,
+  createRatingCache,
+  DEFAULT_LOOKUP_TTL,
+  DEFAULT_MAX_ENTRIES,
+  DEFAULT_TTL,
+  type LookupCache,
+  type RatingCache,
+} from './cache';
 import { isBackgroundRequest } from './messages';
 import { createLimiter } from './queue';
 import { createRatingService, type FetchPage, type RatingService } from './rating-service';
@@ -25,8 +33,15 @@ export function createBackgroundApp(deps: BackgroundDeps): MessageHandler {
     maxEntries: DEFAULT_MAX_ENTRIES,
     ttlMs: DEFAULT_TTL,
   });
+  const lookups = createLookupCache({
+    store: deps.local,
+    now: deps.now,
+    maxEntries: DEFAULT_MAX_ENTRIES,
+    ttlMs: DEFAULT_LOOKUP_TTL,
+  });
   const service = createRatingService({
     cache,
+    lookups,
     backoff: createBackoff({
       store: deps.session,
       now: deps.now,
@@ -42,7 +57,7 @@ export function createBackgroundApp(deps: BackgroundDeps): MessageHandler {
     }),
     fetchPage: createFetchPage(deps.fetch),
   });
-  return createMessageHandler({ service, cache, runtimeId: deps.runtimeId });
+  return createMessageHandler({ service, caches: [cache, lookups], runtimeId: deps.runtimeId });
 }
 
 /** Plain browser request: default headers, the user's own cookies. Never spoofs anything. */
@@ -59,11 +74,12 @@ export function createFetchPage(fetchFn: typeof globalThis.fetch): FetchPage {
 
 export function createMessageHandler({
   service,
-  cache,
+  caches,
   runtimeId,
 }: {
   service: RatingService;
-  cache: RatingCache;
+  /** Emptied by "Clear cache": ratings and title lookups. */
+  caches: (RatingCache | LookupCache)[];
   runtimeId: string;
 }): MessageHandler {
   return (message, sender) => {
@@ -76,8 +92,14 @@ export function createMessageHandler({
         return service.getRating(message.id);
       case 'peekRating':
         return service.peekRating(message.id);
+      case 'findTitle':
+        return service.findTitle({
+          titles: message.titles,
+          year: message.year,
+          kind: message.kind,
+        });
       case 'clearCache':
-        return cache.clear().then(() => true);
+        return Promise.all(caches.map((c) => c.clear())).then(() => true);
     }
   };
 }

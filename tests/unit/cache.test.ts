@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createRatingCache, DEFAULT_TTL, type RatingCache } from '@/lib/cache';
+import {
+  createLookupCache,
+  createRatingCache,
+  DEFAULT_LOOKUP_TTL,
+  DEFAULT_TTL,
+  isMatch,
+  type LookupCache,
+  type RatingCache,
+} from '@/lib/cache';
 import type { Rating } from '@/lib/rating';
 import { type MemoryStore, memoryStore } from '../helpers/memory-store';
 
@@ -104,5 +112,67 @@ describe('createRatingCache', () => {
     expect(store.data.size).toBe(0);
     await cache.set(5, OK);
     expect(store.data.get('ratings:index')).toEqual([5]);
+  });
+});
+
+describe('createLookupCache', () => {
+  let store: MemoryStore;
+  let time: number;
+  let cache: LookupCache;
+
+  beforeEach(() => {
+    store = memoryStore();
+    time = 1_000;
+    cache = createLookupCache({ store, now: () => time, maxEntries: 2, ttlMs: DEFAULT_LOOKUP_TTL });
+  });
+
+  it('keeps a found id for the long TTL', async () => {
+    await cache.set('duna|2021|film', 123);
+    time += DEFAULT_LOOKUP_TTL.found - 1;
+    expect(await cache.get('duna|2021|film')).toBe(123);
+    time += 1;
+    expect(await cache.get('duna|2021|film')).toBeNull();
+  });
+
+  it('keeps an unsure answer for the short TTL', async () => {
+    await cache.set('duna||', 'ambiguous');
+    await cache.set('nic||', 'notfound');
+    expect(await cache.get('duna||')).toBe('ambiguous');
+    time += DEFAULT_LOOKUP_TTL.unsure;
+    expect(await cache.get('nic||')).toBeNull();
+  });
+
+  it('stays separate from ratings and evicts its own oldest keys', async () => {
+    await cache.set('a', 1);
+    await cache.set('b', 2);
+    await cache.set('c', 3);
+    expect(store.data.get('lookups:index')).toEqual(['b', 'c']);
+    expect(store.data.has('lookup:a')).toBe(false);
+    expect(store.data.has('ratings:index')).toBe(false);
+  });
+
+  it('ignores corrupted entries and index keys', async () => {
+    store = memoryStore({
+      'lookup:a': { match: 'maybe', expires: 9e15 },
+      'lookups:index': ['a', 7],
+    });
+    cache = createLookupCache({ store, now: () => time, maxEntries: 5, ttlMs: DEFAULT_LOOKUP_TTL });
+    expect(await cache.get('a')).toBeNull();
+    await cache.set('b', 'notfound');
+    expect(store.data.get('lookups:index')).toEqual(['a', 'b']);
+  });
+});
+
+describe('isMatch', () => {
+  it.each([
+    [1, true],
+    ['ambiguous', true],
+    ['notfound', true],
+    [0, false],
+    [1.5, false],
+    ['found', false],
+    [null, false],
+  ])('%j → %s', (value, expected) => {
+    expect(isMatch(value)).toBe(expected);
   });
 });

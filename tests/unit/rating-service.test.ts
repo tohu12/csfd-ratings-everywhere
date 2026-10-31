@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBackoff } from '@/lib/backoff';
-import { createRatingCache, DEFAULT_TTL } from '@/lib/cache';
+import { createLookupCache, createRatingCache, DEFAULT_LOOKUP_TTL, DEFAULT_TTL } from '@/lib/cache';
 import type { Limiter } from '@/lib/queue';
 import type { Rating } from '@/lib/rating';
-import { createRatingService, type FetchPage, retryAfterMs } from '@/lib/rating-service';
+import { createRatingService, type FetchPage, lookupKey, retryAfterMs } from '@/lib/rating-service';
 import { fixture } from '../helpers/fixtures';
 import { memoryStore } from '../helpers/memory-store';
 
@@ -16,10 +16,16 @@ function setup(fetchPage: FetchPage, limiter: Limiter = passThrough) {
   const local = memoryStore();
   const session = memoryStore();
   const cache = createRatingCache({ store: local, now, maxEntries: 10, ttlMs: DEFAULT_TTL });
+  const lookups = createLookupCache({
+    store: local,
+    now,
+    maxEntries: 10,
+    ttlMs: DEFAULT_LOOKUP_TTL,
+  });
   const backoff = createBackoff({ store: session, now, baseMs: 1000, maxMs: 8000 });
   const fetchSpy = vi.fn(fetchPage);
-  const service = createRatingService({ cache, backoff, limiter, fetchPage: fetchSpy });
-  return { service, fetchSpy, cache, backoff, advance: (ms: number) => (time += ms) };
+  const service = createRatingService({ cache, lookups, backoff, limiter, fetchPage: fetchSpy });
+  return { service, fetchSpy, cache, lookups, backoff, advance: (ms: number) => (time += ms) };
 }
 
 const page =
@@ -186,6 +192,116 @@ describe('createRatingService', () => {
       expect(resetSpy).toHaveBeenCalled();
       expect(await s.backoff.isBlocked()).toBe(false);
     });
+  });
+});
+
+const DUNA = { titles: ['Duna'], year: 2021, kind: 'film' } as const;
+const EMPTY_SEARCH = '<html><p>Nic nenalezeno</p></html>';
+
+/** Serves the search fixture for `q=duna`, an empty result page for other queries, film pages otherwise. */
+function csfd(film = 'csfd/film.html', search = 'csfd/search.html'): FetchPage {
+  return async (url) => {
+    if (!url.includes('/hledat/')) {
+      return { status: 200, text: fixture(film), retryAfter: null };
+    }
+    const text = url.endsWith('q=Duna') ? fixture(search) : EMPTY_SEARCH;
+    return { status: 200, text, retryAfter: null };
+  };
+}
+
+describe('findTitle', () => {
+  let s: ReturnType<typeof setup>;
+
+  beforeEach(() => {
+    s = setup(csfd());
+  });
+
+  it('searches ČSFD, picks the match and loads its rating', async () => {
+    expect(await s.service.findTitle(DUNA)).toEqual({ status: 'found', id: 1234, rating: FILM });
+    expect(s.fetchSpy.mock.calls.map(([url]) => url)).toEqual([
+      'https://www.csfd.cz/hledat/?q=Duna',
+      'https://www.csfd.cz/film/1234/prehled/',
+    ]);
+  });
+
+  it('answers a repeated query from the caches without network', async () => {
+    await s.service.findTitle(DUNA);
+    expect(await s.service.findTitle({ ...DUNA, titles: ['DUNA'] })).toEqual({
+      status: 'found',
+      id: 1234,
+      rating: FILM,
+    });
+    expect(s.fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('is unsure for an ambiguous title and remembers that without loading any film', async () => {
+    const query = { titles: ['Duna'], year: null, kind: 'film' } as const;
+    expect(await s.service.findTitle(query)).toEqual({ status: 'unsure' });
+    expect(await s.service.findTitle(query)).toEqual({ status: 'unsure' });
+    expect(s.fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to the second title when the first finds nothing', async () => {
+    const query = { titles: ['Nestvůra', 'Duna'], year: 2021, kind: 'film' } as const;
+    expect(await s.service.findTitle(query)).toMatchObject({ status: 'found', id: 1234 });
+    expect(s.fetchSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it('is unsure when no title finds anything', async () => {
+    expect(await s.service.findTitle({ ...DUNA, titles: ['Nic', 'Nothing'] })).toEqual({
+      status: 'unsure',
+    });
+    expect(s.fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns blocked on an Anubis search page and pauses further lookups', async () => {
+    s = setup(csfd('csfd/film.html', 'csfd/anubis-reject.html'));
+    expect(await s.service.findTitle(DUNA)).toEqual({ status: 'blocked' });
+    expect(await s.service.findTitle({ ...DUNA, titles: ['Jiný'] })).toEqual({ status: 'blocked' });
+    expect(s.fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a blocked film page inside a found result', async () => {
+    s = setup(csfd('csfd/anubis-reject.html'));
+    expect(await s.service.findTitle(DUNA)).toEqual({
+      status: 'found',
+      id: 1234,
+      rating: { status: 'blocked' },
+    });
+  });
+
+  it('returns error for a failed search without caching it', async () => {
+    s = setup(async () => ({ status: 500, text: EMPTY_SEARCH, retryAfter: null }));
+    expect(await s.service.findTitle(DUNA)).toEqual({ status: 'error' });
+    s.fetchSpy.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    expect(await s.service.findTitle(DUNA)).toEqual({ status: 'error' });
+    expect(s.fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('shares one lookup between concurrent identical queries', async () => {
+    const [a, b] = await Promise.all([s.service.findTitle(DUNA), s.service.findTitle(DUNA)]);
+    expect(b).toBe(a);
+    expect(s.fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats an unreadable lookup cache as a miss and survives failing writes', async () => {
+    vi.spyOn(s.lookups, 'get').mockRejectedValue(new Error('unavailable'));
+    vi.spyOn(s.lookups, 'set').mockRejectedValue(new Error('QUOTA_BYTES'));
+    expect(await s.service.findTitle(DUNA)).toMatchObject({ status: 'found', id: 1234 });
+  });
+
+  it('returns error when the limiter throws unexpectedly', async () => {
+    s = setup(csfd(), () => Promise.reject(new Error('boom')));
+    expect(await s.service.findTitle(DUNA)).toEqual({ status: 'error' });
+  });
+});
+
+describe('lookupKey', () => {
+  it('normalises titles and keeps year and kind', () => {
+    expect(lookupKey({ titles: ['Špetka lásky', 'Salted Love'], year: 2026, kind: 'series' })).toBe(
+      'spetka lasky/salted love|2026|series',
+    );
+    expect(lookupKey({ titles: ['Duna'], year: null, kind: null })).toBe('duna||');
   });
 });
 
