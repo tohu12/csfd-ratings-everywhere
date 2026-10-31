@@ -10,6 +10,7 @@ import { fixture } from '../helpers/fixtures';
 
 // Invisible marks the real pages wrap titles in: left-to-right mark, first-strong isolate, pop isolate.
 const LRM = String.fromCodePoint(0x200e);
+const APPLE_MOVIE = 'https://tv.apple.com/cz/movie/x/umc.1';
 const FSI = String.fromCodePoint(0x2068);
 const PDI = String.fromCodePoint(0x2069);
 
@@ -173,23 +174,31 @@ describe('detectTitle without a detail view', () => {
 
   it('returns null for a generic page whose heading does not match the document title', () => {
     const doc = parse('<title>Watch Something - Apple TV</title><h1>Browse</h1><p>2025 · 2h</p>');
-    expect(apple && detectTitle(doc, new URL('https://tv.apple.com/cz'), apple)).toBeNull();
+    expect(apple && detectTitle(doc, new URL(APPLE_MOVIE), apple)).toBeNull();
   });
 
   it('returns null for a generic page without a document title', () => {
     const doc = parse('<h1>Browse</h1>');
-    expect(apple && detectTitle(doc, new URL('https://tv.apple.com/cz'), apple)).toBeNull();
+    expect(apple && detectTitle(doc, new URL(APPLE_MOVIE), apple)).toBeNull();
   });
 
-  it('returns null for an article-like page: matching heading but no year or kind', () => {
+  it('never takes the URL alone as proof of a detail page', () => {
     const doc = parse('<title>Top picks - Apple TV</title><h2>Top picks</h2><p>Lorem ipsum.</p>');
-    expect(apple && detectTitle(doc, new URL('https://tv.apple.com/cz/room/x'), apple)).toBeNull();
+    expect(apple && detectTitle(doc, new URL(APPLE_MOVIE), apple)).toBeNull();
   });
 });
 
 describe('detectTitle generic heuristics', () => {
+  const prime = VOD_SITES.find((s) => s.brand === 'Prime Video');
   const apple = VOD_SITES.find((s) => s.brand === 'Apple TV');
-  const run = (body: string, path = '/cz/x') =>
+  const run = (body: string) =>
+    prime &&
+    detectTitle(
+      parse(`<title>Prime Video: Duna</title>${body}`),
+      new URL('https://www.primevideo.com/detail/X'),
+      prime,
+    );
+  const onApple = (body: string, path: string) =>
     apple &&
     detectTitle(
       parse(`<title>Watch Duna - Apple TV</title>${body}`),
@@ -205,7 +214,7 @@ describe('detectTitle generic heuristics', () => {
 
   it('reads series from season words and from the URL', () => {
     expect(run('<h1>Duna</h1><p>2024 • 2 řady</p>')).toMatchObject({ kind: 'series', year: 2024 });
-    expect(run('<h1>Duna</h1><p>Rok: 2024</p>', '/cz/show/duna')).toMatchObject({
+    expect(onApple('<h1>Duna</h1><p>Rok: 2024</p>', '/cz/show/duna/umc.1')).toMatchObject({
       kind: 'series',
       year: 2024,
     });
@@ -217,7 +226,7 @@ describe('detectTitle generic heuristics', () => {
       year: 2021,
       kind: 'film',
     });
-    expect(run('<h1>Duna</h1><p>Year: 2021</p>', '/cz/movie/duna')).toMatchObject({
+    expect(onApple('<h1>Duna</h1><p>Year: 2021</p>', '/cz/movie/duna/umc.1')).toMatchObject({
       year: 2021,
       kind: 'film',
     });
@@ -418,13 +427,13 @@ describe('detectTitle generic signals', () => {
     ).toMatchObject({ kind: 'series', year: null });
   });
 
-  it('finds the title by its JSON-LD name even when the document title has another wording', () => {
+  it('ignores a JSON-LD name the document title does not start with (stale after navigation)', () => {
     expect(
       run(
         `<title>Sledujte online</title>${ld({ '@type': 'TVSeries', name: 'Duna' })}`,
         '<h2>Duna</h2>',
       ),
-    ).toMatchObject({ titles: ['Duna'] });
+    ).toBeNull();
   });
 
   it('uses the JSON-LD name without an on-page element when the document title starts with it', () => {
@@ -468,16 +477,23 @@ describe('detectTitle generic signals', () => {
     ).toBeNull();
   });
 
-  it('reads Czech plural paths', () => {
-    expect(run('<title>Duna</title>', '<h2>Duna</h2>', '/filmy/duna')).toMatchObject({
+  it('refines the kind from Czech plural paths, but only next to a content signal', () => {
+    const prima = VOD_SITES.find((x) => x.brand === 'prima+');
+    const on = (path: string, body: string) =>
+      prima &&
+      detectTitle(
+        parse(`<title>Duna online | prima+</title>${body}`),
+        new URL(`https://www.iprima.cz${path}`),
+        prima,
+      );
+    expect(on('/filmy/duna', '<h1>Duna</h1><p>2021 · 120 min</p>')).toMatchObject({
       kind: 'film',
+      year: 2021,
     });
-    expect(run('<title>Duna</title>', '<h2>Duna</h2>', '/serialy/duna')).toMatchObject({
+    expect(on('/serialy/duna', '<h1>Duna</h1><p>2021 · 50 min</p>')).toMatchObject({
       kind: 'series',
     });
-    expect(run('<title>Duna</title>', '<h2>Duna</h2>', '/stream/tv/duna')).toMatchObject({
-      kind: 'series',
-    });
+    expect(on('/filmy/duna', '<h1>Duna</h1><p>Sci-fi</p>')).toBeNull();
   });
 
   it('looks for year and kind only in the nearest few ancestors of the title', () => {
@@ -487,5 +503,135 @@ describe('detectTitle generic signals', () => {
     expect(
       run('<title>Duna</title>', `<section><h2>Duna</h2></section><p>2021 · 2 h 35 m</p>`),
     ).toMatchObject({ year: 2021 });
+  });
+});
+
+describe('detectTitle never takes another title for the open one (review regressions)', () => {
+  const site = (brand: string) => {
+    const found = VOD_SITES.find((x) => x.brand === brand);
+    if (!found) {
+      throw new Error(brand);
+    }
+    return found;
+  };
+  /** `title` is the document title; `head` adds e.g. JSON-LD. */
+  const run = (brand: string, url: string, title: string, body: string, head = '') =>
+    detectTitle(
+      parse(`<head><title>${title}</title>${head}</head><body>${body}</body>`),
+      new URL(url),
+      site(brand),
+    );
+
+  it('prefers the full title over a shorter prefix from a recommendation tile', () => {
+    const body =
+      '<h1><img alt="Road House 2 (2026)"></h1><div>2026 · 2 h 1 min</div>' +
+      '<section><h3>Road House</h3><span>1989 · 1 h 54 min</span></section>';
+    expect(
+      run(
+        'Prime Video',
+        'https://www.primevideo.com/detail/X',
+        'Prime Video: Road House 2 (2026)',
+        body,
+      ),
+    ).toMatchObject({
+      titles: ['Road House 2'],
+      year: 2026,
+    });
+  });
+
+  it('ignores titles inside links, even before the hero', () => {
+    const body =
+      '<a href="/cz/stream/movies/top-gun/1"><h3>Top Gun</h3><span>1986 · 1 h 50 min</span></a>' +
+      '<div><img alt="Top Gun: Maverick"><p>2022 · 2h 10m</p></div>';
+    expect(
+      run(
+        'SkyShowtime',
+        'https://www.skyshowtime.com/cz/stream/movies/top-gun-maverick/0c63',
+        'Sledujte Top Gun: Maverick nyní online | SkyShowtime',
+        body,
+      ),
+    ).toMatchObject({ titles: ['Top Gun: Maverick'], year: 2022 });
+  });
+
+  it('ignores stale JSON-LD of the previous page', () => {
+    const ldScript =
+      '<script type="application/ld+json">{"@type":"TVSeries","name":"Extraktoři"}</script>';
+    const body =
+      '<h2>Studna</h2><p>2025 · 1 série</p><img alt="Extraktoři"><span>2026 · 1 řada</span>';
+    expect(
+      run(
+        'Oneplay',
+        'https://www.oneplay.cz/porad/10628-studna',
+        'Studna - Sledujte celé díly online | Oneplay',
+        body,
+        ldScript,
+      ),
+    ).toMatchObject({ titles: ['Studna'], year: 2025 });
+  });
+
+  it('treats episode and season pages as no detail view', () => {
+    const ldScript =
+      '<script type="application/ld+json">{"@type":"TVEpisode","name":"Byt ve třetím patře"}</script>';
+    const body = `${ldScript}<h2>Byt ve třetím patře</h2><p>1989 · 50 min</p>`;
+    expect(
+      run(
+        'Česká televize',
+        'https://www.ceskatelevize.cz/porady/1-poirot/',
+        'Byt ve třetím patře - iVysílání | Česká televize',
+        body,
+      ),
+    ).toBeNull();
+  });
+
+  it.each([
+    ['Česká televize', 'https://www.ceskatelevize.cz/porady/10111864738-hercule-poirot/123-byt/'],
+    ['Česká televize', 'https://www.ceskatelevize.cz/ivysilani/kategorie/3947-filmy/'],
+    ['prima+', 'https://www.iprima.cz/serialy/zakony-vlka/zakony-vlka-iii/8-epizoda-8'],
+    ['prima+', 'https://www.iprima.cz/filmy/'],
+    ['Oneplay', 'https://www.oneplay.cz/p/1252-jaroslav-plesl'],
+    ['Oneplay', 'https://www.oneplay.cz/porad/9486-extraktori/epizoda/4243068-6-dil'],
+    ['Prime Video', 'https://www.primevideo.com/search/ref=atv_sr_sug?phrase=duna'],
+    ['SkyShowtime', 'https://www.skyshowtime.com/cz'],
+    ['Apple TV', 'https://tv.apple.com/cz/room/duna'],
+  ])('ignores non-detail paths on %s: %s', (brand, url) => {
+    expect(run(brand, url, 'Duna', '<h1>Duna</h1><p>2021 · 2 h 35 m</p>')).toBeNull();
+  });
+
+  it('stops looking for year and kind at a container with another heading', () => {
+    const body =
+      '<section><h2>Duna</h2><div><h3>Jiný film</h3><p>1989 · 1 h 54 min</p></div></section>';
+    expect(
+      run('Prime Video', 'https://www.primevideo.com/detail/X', 'Prime Video: Duna', body),
+    ).toBeNull();
+  });
+
+  it('strips the brand only as a whole word', () => {
+    expect(cleanDocumentTitle('Primadonky online – celý seriál | prima+', 'prima+')).toBe(
+      'Primadonky online – celý seriál',
+    );
+  });
+
+  it('matches a JSON-LD name only as whole words of the document title', () => {
+    const ldScript = '<script type="application/ld+json">{"@type":"Movie","name":"Duna"}</script>';
+    expect(
+      run(
+        'Prime Video',
+        'https://www.primevideo.com/detail/X',
+        'Dunaj – celý film',
+        '<p>x</p>',
+        ldScript,
+      ),
+    ).toBeNull();
+  });
+
+  it('expects a year on sites with a year hint, not on generic ones', () => {
+    expect(detect('netflix-film', 'https://www.netflix.com/title/814862')?.yearExpected).toBe(true);
+    expect(
+      detect('disney-film', 'https://www.disneyplus.com/cs-cz/browse/entity-1')?.yearExpected,
+    ).toBe(true);
+    expect(
+      detect('ct-series', 'https://www.ceskatelevize.cz/porady/10111864738-hercule-poirot/')
+        ?.yearExpected,
+    ).toBe(false);
   });
 });

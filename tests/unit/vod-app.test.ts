@@ -124,11 +124,34 @@ describe('startVodApp', () => {
     expect(pill()?.title).toBe('badgeOpen');
   });
 
-  it('looks a title up by its kind when the year is unknown', () => {
+  it('waits for the year on sites that always show one, even when the kind is known', () => {
     document.body.replaceChildren();
     start();
     open('Duna', null);
-    expect(findTitle).toHaveBeenCalledWith({ titles: ['Duna'], year: null, kind: 'film' });
+    expect(findTitle).not.toHaveBeenCalled();
+    open('Duna', 2021);
+    expect(findTitle).toHaveBeenCalledTimes(1);
+    expect(findTitle).toHaveBeenCalledWith({ titles: ['Duna'], year: 2021, kind: 'film' });
+  });
+
+  it('looks a title up by its kind on generic sites that show no year', () => {
+    const ct = findSite('www.ceskatelevize.cz');
+    loadVodPage('ct-series');
+    if (ct) {
+      start(
+        {},
+        {
+          site: ct,
+          hostname: 'www.ceskatelevize.cz',
+          url: () => 'https://www.ceskatelevize.cz/porady/10111864738-hercule-poirot/',
+        },
+      );
+    }
+    expect(findTitle).toHaveBeenCalledWith({
+      titles: ['Hercule Poirot'],
+      year: null,
+      kind: 'series',
+    });
   });
 
   it('waits for the user to interact with the page before asking ČSFD', () => {

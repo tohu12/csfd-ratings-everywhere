@@ -40,6 +40,7 @@ const ERROR_RESULT: TitleResult = { status: 'error' };
 interface Shown {
   key: string;
   query: TitleQuery;
+  yearExpected: boolean;
   badge: Badge;
   requested: boolean;
 }
@@ -87,7 +88,9 @@ export function startVodApp(deps: VodDeps): VodApp {
 
   const request = (shown: Shown): void => {
     const { year, kind } = shown.query;
-    if (!settings.showRatings || (year === null && kind === null) || !deps.isUserActive()) {
+    // Without a year only the kind narrows the match; sites that always show one wait for it.
+    const unspecific = year === null && (kind === null || shown.yearExpected);
+    if (!settings.showRatings || unspecific || !deps.isUserActive()) {
       return;
     }
     const result = lookUp(shown.key, shown.query);
@@ -125,7 +128,7 @@ export function startVodApp(deps: VodDeps): VodApp {
       doc.body.append(badge.host);
     }
     badge.render({ kind: 'link' });
-    current = { key, query, badge, requested: false };
+    current = { key, query, yearExpected: detected.yearExpected, badge, requested: false };
     schedule();
   };
 

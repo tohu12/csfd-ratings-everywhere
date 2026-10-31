@@ -10,19 +10,21 @@ export interface DetectedTitle {
   kind: TitleKind | null;
   /** Where the badge goes; null when nothing suitable is on the page. */
   anchor: Element | null;
+  /** The site shows a year for every title (per-site hints): a lookup waits until it renders. */
+  yearExpected: boolean;
 }
 
 /**
- * Per-site hints. Sites without a `title` hint use the generic detector: an `img[alt]`/`h1–h3`
- * that the document title starts with (or the JSON-LD name), year and kind from the text near it.
+ * Per-site hints. Sites without a `title` hint use the generic detector: the `h1–h3`/`img[alt]`
+ * that best matches the document title (or its JSON-LD name), year and kind from the text near it.
  */
 export interface VodSite {
   /** Hostname, matched with its subdomains. */
   host: string;
   /** Brand stripped from `document.title`. */
   brand: string;
-  /** Only these path prefixes are detail pages (sites that also host news etc.). */
-  paths?: readonly string[];
+  /** Pathname of a detail page; any other page (news, people, episodes, lists) is ignored. */
+  detailPath?: RegExp;
   /** Detail-view container; when set and absent, no title is shown. */
   root?: string;
   /** Element carrying the on-page title (text, or `alt` of an image). */
@@ -68,12 +70,16 @@ export const VOD_SITES: readonly VodSite[] = [
     anchor: '[data-testid="metadata_release_year"]',
   },
   // Generic detection; pages captured logged out on 2026-10-31.
-  { host: 'tv.apple.com', brand: 'Apple TV' },
-  { host: 'primevideo.com', brand: 'Prime Video' },
-  { host: 'skyshowtime.com', brand: 'SkyShowtime' },
-  { host: 'oneplay.cz', brand: 'Oneplay' },
-  { host: 'ceskatelevize.cz', brand: 'Česká televize', paths: ['/porady/', '/ivysilani/'] },
-  { host: 'iprima.cz', brand: 'prima+', paths: ['/filmy/', '/serialy/'] },
+  { host: 'tv.apple.com', brand: 'Apple TV', detailPath: /\/(?:movie|show)\/[^/]+\/[^/]+\/?$/ },
+  { host: 'primevideo.com', brand: 'Prime Video', detailPath: /\/detail\/[^/]+/ },
+  {
+    host: 'skyshowtime.com',
+    brand: 'SkyShowtime',
+    detailPath: /\/stream\/(?:movies|tv)\/[^/]+\/[^/]+\/?$/,
+  },
+  { host: 'oneplay.cz', brand: 'Oneplay', detailPath: /^\/porad\/\d+-[^/]+\/?$/ },
+  { host: 'ceskatelevize.cz', brand: 'Česká televize', detailPath: /^\/porady\/\d+-[^/]+\/?$/ },
+  { host: 'iprima.cz', brand: 'prima+', detailPath: /^\/(?:filmy|serialy)\/[^/]+\/?$/ },
 ];
 
 export function findSite(hostname: string): VodSite | null {
@@ -100,7 +106,8 @@ export function normalizeTitle(title: string): string {
 /** The film name from `document.title`: brand, "Watch …" and invisible marks removed. */
 export function cleanDocumentTitle(raw: string, brand: string): string | null {
   const brandKey = normalizeTitle(brand);
-  const isBrand = (piece: string) => normalizeTitle(piece).includes(brandKey);
+  // Whole words only: "Primadonky" is not the brand "prima+".
+  const isBrand = (piece: string) => ` ${normalizeTitle(piece)} `.includes(` ${brandKey} `);
   let text = raw.replace(INVISIBLE, '').trim();
   const colon = text.indexOf(':');
   if (colon > 0 && normalizeTitle(text.slice(0, colon)) === brandKey) {
@@ -136,13 +143,10 @@ const FILM_DURATION = new RegExp(DURATION, 'iu');
 const SERIES_PATH = /\/(?:shows?|series|serials?|serialy|tv-shows?|tv)\//i;
 const FILM_PATH = /\/(?:movies?|films?|filmy)\//i;
 const YEAR_IN_PARENS = /\s*\(((?:19|20)\d{2})\)\s*$/;
-const LD_KINDS: Record<string, TitleKind> = {
-  Movie: 'film',
-  TVSeries: 'series',
-  TVSeason: 'series',
-  TVEpisode: 'series',
-  CreativeWorkSeason: 'series',
-};
+const ANY_YEAR_IN_PARENS = /\((?:19|20)\d{2}\)/g;
+const LD_KINDS: Record<string, TitleKind> = { Movie: 'film', TVSeries: 'series' };
+// Their `name` is an episode or season name, never what ČSFD should be searched for.
+const LD_PARTS = new Set(['TVEpisode', 'TVSeason', 'CreativeWorkSeason']);
 const LD_MAX_LENGTH = 100_000;
 const NEAR_TITLE_LEVELS = 6;
 const TEXT_LIMIT = 10_000;
@@ -150,7 +154,7 @@ const NOT_TEXT = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE']);
 
 /** Finds the film or series of the open detail view, or null when there is none. */
 export function detectTitle(doc: Document, url: URL, site: VodSite): DetectedTitle | null {
-  if (site.paths && !site.paths.some((path) => url.pathname.startsWith(path))) {
+  if (site.detailPath && !site.detailPath.test(url.pathname)) {
     return null;
   }
   const root = site.root ? doc.querySelector(site.root) : doc.body;
@@ -178,6 +182,7 @@ function detectHinted(doc: Document, url: URL, site: VodSite, root: Element): De
     kind:
       site.series && root.querySelector(site.series) ? 'series' : (pathKind(url) ?? textKind(text)),
     anchor: (site.anchor && root.querySelector(site.anchor)) || titleEl,
+    yearExpected: Boolean(site.year ?? site.meta),
   };
 }
 
@@ -191,9 +196,10 @@ function metadataText(root: Element, site: VodSite, yearEl: Element | null): str
 }
 
 /**
- * Generic detection. The title is an on-page heading or image the document title starts with
- * (marketing suffixes like "– celý film online" then do not matter), or the JSON-LD name.
- * Year and kind come from the nearest ancestor text that has any, then from stronger signals.
+ * Generic detection. The title is the on-page heading or image that best matches the document
+ * title (marketing suffixes like "– celý film online" do not matter) or its JSON-LD name.
+ * Year and kind come from the nearest text around it; the URL can refine the kind but never
+ * makes a page a detail page on its own.
  */
 function detectGeneric(
   doc: Document,
@@ -202,64 +208,76 @@ function detectGeneric(
   root: Element,
 ): DetectedTitle | null {
   const docTitle = cleanDocumentTitle(doc.title, site.brand);
+  const docKey = docTitle ? normalizeTitle(docTitle.replace(ANY_YEAR_IN_PARENS, ' ')) : '';
   const ld = jsonLdTitle(doc);
-  const titleEl = findTitleElement(root, docTitle, ld?.name ?? null);
-  const pageTitle = titleEl ? elementText(titleEl) : ldTitleInDocumentTitle(ld, docTitle);
+  if (ld === 'part') {
+    return null; // an episode or season page
+  }
+  // JSON-LD can be stale after client-side navigation: trust it only if the title agrees.
+  const trusted = ld && startsWithWords(docKey, normalizeTitle(ld.name)) ? ld : null;
+  const titleEl = findTitleElement(root, docKey, trusted ? normalizeTitle(trusted.name) : '');
+  const pageTitle = titleEl ? elementText(titleEl) : trusted?.name;
   if (!pageTitle) {
     return null;
   }
   const text = titleEl ? textNearTitle(titleEl) : '';
   const year = yearFromText(text) ?? yearInParens(doc.title);
-  const kind =
-    pathKind(url) ??
-    (ld && sameTitle(ld.name, pageTitle) ? ld.kind : null) ??
-    ogKind(doc, pageTitle) ??
+  const contentKind =
+    (trusted && sameTitle(trusted.name, pageTitle) ? trusted.kind : null) ??
+    ogKind(doc, site, pageTitle) ??
     textKind(text);
-  if (year === null && kind === null) {
+  if (year === null && contentKind === null) {
     return null; // e.g. a category page whose heading matches its title
   }
-  return { titles: [pageTitle], year, kind, anchor: titleEl };
+  return {
+    titles: [pageTitle],
+    year,
+    kind: pathKind(url) ?? contentKind,
+    anchor: titleEl,
+    yearExpected: false,
+  };
 }
 
 /**
- * Best on-page title element: an exact JSON-LD name beats a document-title prefix, and a heading
- * beats an image (posters repeat the title in `alt`; a badge reads better after a heading).
+ * Best on-page title element, ranked by match quality: the JSON-LD name, then the whole document
+ * title, then the longest prefix of it. On a tie, headings and images inside headings win
+ * (posters and backdrops repeat the title in `alt`). Elements inside links are tiles of other
+ * titles and never count.
  */
-function findTitleElement(
-  root: Element,
-  docTitle: string | null,
-  ldName: string | null,
-): Element | null {
-  const ldKey = ldName && normalizeTitle(ldName);
-  const docKey = docTitle && normalizeTitle(docTitle);
+function findTitleElement(root: Element, docKey: string, ldKey: string): Element | null {
   let best: Element | null = null;
-  let bestScore = 0;
+  let bestRank = 0;
   for (const el of root.querySelectorAll('img[alt], h1, h2, h3')) {
-    const score = titleMatch(normalizeTitle(elementText(el)), ldKey, docKey) * 2;
-    const ranked = score && score + (el instanceof HTMLImageElement ? 0 : 1);
-    if (ranked > bestScore) {
+    const key = el.closest('a[href]') ? '' : normalizeTitle(elementText(el));
+    const tier = titleTier(key, ldKey, docKey);
+    // On a tie a heading (or a logo inside one) beats a loose image such as a hero backdrop.
+    const rank =
+      tier && tier * 100_000 + Math.min(key.length, 9_999) * 2 + (el.closest('h1, h2, h3') ? 1 : 0);
+    if (rank > bestRank) {
       best = el;
-      bestScore = ranked;
+      bestRank = rank;
     }
   }
   return best;
 }
 
-/** 2: the JSON-LD name; 1: the document title starts with it; 0: no match. */
-function titleMatch(key: string, ldKey: string | null, docKey: string | null): number {
+/** 3: the JSON-LD name; 2: the whole document title; 1: a prefix of it; 0: no match. */
+function titleTier(key: string, ldKey: string, docKey: string): number {
   if (!key) {
     return 0;
   }
   if (key === ldKey) {
+    return 3;
+  }
+  if (key === docKey) {
     return 2;
   }
-  return docKey && (docKey === key || docKey.startsWith(`${key} `)) ? 1 : 0;
+  return startsWithWords(docKey, key) ? 1 : 0;
 }
 
-function ldTitleInDocumentTitle(ld: LdTitle | null, docTitle: string | null): string | null {
-  return ld && docTitle && normalizeTitle(docTitle).startsWith(normalizeTitle(ld.name))
-    ? ld.name
-    : null;
+/** `text` starts with the whole words of `prefix`. */
+function startsWithWords(text: string, prefix: string): boolean {
+  return prefix !== '' && (text === prefix || text.startsWith(`${prefix} `));
 }
 
 function sameTitle(a: string, b: string): boolean {
@@ -272,10 +290,18 @@ function elementText(el: Element): string {
   return text.replace(INVISIBLE, '').replace(YEAR_IN_PARENS, '').trim();
 }
 
-/** Text of the nearest ancestor (up to NEAR_TITLE_LEVELS) that mentions a year, duration or seasons. */
+/**
+ * Text of the nearest ancestor (up to NEAR_TITLE_LEVELS) that mentions a year, duration or
+ * seasons. The walk stops at a container holding another heading: rows of other titles.
+ */
 function textNearTitle(titleEl: Element): string {
-  let node = titleEl.parentElement;
+  const own = titleEl.closest('h1, h2, h3');
+  // Count levels from the heading: logos sit a few wrappers deep inside it.
+  let node = (own ?? titleEl).parentElement;
   for (let level = 0; node && level < NEAR_TITLE_LEVELS; level++) {
+    if ([...node.querySelectorAll('h1, h2, h3')].some((heading) => heading !== own)) {
+      return '';
+    }
     const text = visibleText(node);
     if (yearFromText(text) !== null || SERIES_WORDS.test(text) || FILM_DURATION.test(text)) {
       return text;
@@ -290,15 +316,23 @@ interface LdTitle {
   kind: TitleKind;
 }
 
-/** The first Movie/TVSeries item of the page's JSON-LD. Dates there are unreliable and unused. */
-function jsonLdTitle(doc: Document): LdTitle | null {
+/**
+ * The first top-level Movie/TVSeries item of the page's JSON-LD, or `part` for an episode or
+ * season page. Dates there are unreliable (often broadcast dates) and unused.
+ */
+function jsonLdTitle(doc: Document): LdTitle | 'part' | null {
   for (const script of doc.querySelectorAll('script[type="application/ld+json"]')) {
     const source = String(script.textContent);
     const items = source.length <= LD_MAX_LENGTH ? ldItems(safeJsonParse(source)) : [];
-    for (const item of items) {
-      const kind = isRecord(item) ? LD_KINDS[String(item['@type'])] : undefined;
-      if (kind && isRecord(item) && typeof item['name'] === 'string' && item['name'].trim()) {
-        return { name: item['name'].trim(), kind };
+    for (const item of items.filter(isRecord)) {
+      const type = String(item['@type']);
+      if (LD_PARTS.has(type)) {
+        return 'part';
+      }
+      const kind = LD_KINDS[type];
+      const name = typeof item['name'] === 'string' ? item['name'].trim() : '';
+      if (kind && name) {
+        return { name, kind };
       }
     }
   }
@@ -320,10 +354,11 @@ function safeJsonParse(text: string): unknown {
   }
 }
 
-/** `og:type`, trusted only when `og:title` names the same title (SPAs can leave stale tags). */
-function ogKind(doc: Document, pageTitle: string): TitleKind | null {
+/** `og:type`, trusted only when `og:title` starts with the title (SPAs can leave stale tags). */
+function ogKind(doc: Document, site: VodSite, pageTitle: string): TitleKind | null {
   const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content');
-  if (!ogTitle || !normalizeTitle(ogTitle).includes(normalizeTitle(pageTitle))) {
+  const ogKey = normalizeTitle(cleanDocumentTitle(ogTitle ?? '', site.brand) ?? '');
+  if (!startsWithWords(ogKey, normalizeTitle(pageTitle))) {
     return null;
   }
   const type = doc.querySelector('meta[property="og:type"]')?.getAttribute('content');
