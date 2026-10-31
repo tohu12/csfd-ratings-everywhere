@@ -48,6 +48,18 @@ describe('createLimiter', () => {
     expect(started).toEqual([1, 2]);
   });
 
+  it('rejects a task that throws synchronously and frees its slot', async () => {
+    const boom = () => {
+      throw new URIError('URI malformed');
+    };
+    const failures = [limit(boom), limit(boom)].map((p) => p.catch((error: unknown) => error));
+    await vi.advanceTimersByTimeAsync(400);
+    expect(await Promise.all(failures)).toEqual([expect.any(URIError), expect.any(URIError)]);
+    const ok = limit(async () => 7);
+    await vi.advanceTimersByTimeAsync(400);
+    await expect(ok).resolves.toBe(7);
+  });
+
   it('never runs more than `concurrency` tasks at once', async () => {
     const ds = [deferred<number>(), deferred<number>(), deferred<number>()];
     const results = ds.map((d, i) => limit(task(i, d)));

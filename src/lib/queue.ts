@@ -56,19 +56,18 @@ export function createLimiter({
     }
   };
 
-  return (task) =>
-    new Promise((resolve, reject) => {
+  return <T>(task: () => Promise<T>) =>
+    new Promise<T>((resolve, reject) => {
       if (pending.length >= maxPending) {
         reject(new QueueFullError());
         return;
       }
       pending.push(() => {
-        task()
-          .then(resolve, reject)
-          .finally(() => {
-            active--;
-            pump();
-          });
+        // A task that throws synchronously must still free its slot.
+        new Promise<T>((run) => run(task())).then(resolve, reject).finally(() => {
+          active--;
+          pump();
+        });
       });
       pump();
     });
