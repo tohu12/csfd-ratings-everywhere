@@ -12,7 +12,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 ## State
 | Area | State |
 |---|---|
-| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** Netflix, Disney+, HBO Max, Apple TV detail views → ČSFD search → rating. 436 unit tests at 100 % coverage, 13 Playwright E2E, size budgets (VOD script 5.4 / 6 kB). Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. |
+| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** detail views on Netflix, Disney+, HBO Max (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+ (generic detector) → ČSFD search → rating. 456 unit tests at 100 % coverage, 13 Playwright E2E, size budgets (VOD script 6.2 / 7 kB). Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. |
 | VOD real-world check | **Not done yet.** Detection verified on DOM captured 2026-10-31 from the owner's logged-in sessions (`tests/fixtures/pages/vod/`). The search parser is tested only on a **synthetic** ČSFD search page. Unknown: whether `/hledat/` requests pass Anubis like `/film/` ones. |
 | Real-world check | 2026-10-31, headed Chrome with the owner on 8 warcenter.cz topics: **8/8 correct**, incl. series-episode URLs and unrated films. Extension requests to csfd.cz **pass Anubis**. |
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
@@ -31,6 +31,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 - **Firefox** declares `data_collection_permissions.required: ["websiteContent"]`, because film ids from visited pages go to csfd.cz. Honest disclosure.
 - **`@types/node` stays on Node 22** (`.nvmrc`). Dependabot ignores its majors; CI fails on a mismatch.
 - **VOD sites** (owner, 2026-10-31):
+  - "everywhere" means all common VOD services on a curated list, **not** every website (the owner chose this twice),
   - look titles up via ČSFD search **only when a detail view is open**, never for browse tiles or automatically,
   - an uncertain match shows **„ČSFD ?“** linking to the ČSFD search, never a possibly wrong %,
   - one **generic detector** (document title ↔ on-page title, year next to the duration) on a **curated list of VOD hosts**, not on every site; per-site hints only where generic detection fails,
@@ -42,7 +43,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
    - the owner saves real ČSFD search pages (`/hledat/?q=silo`, `?q=duna`) into `tests/fixtures/csfd/` and the parser is checked against them,
    - real-world check together in headed Chrome: ~8 titles per service (films, series, Czech titles, duplicate names); record the hit rate and whether `/hledat/` passes Anubis,
    - then mention VOD on the welcome page and in the store texts (privacy texts are already updated), and release v1.2.0.
-   - More sites (Prime Video, SkyShowtime, Oneplay, Voyo, iVysílání): the owner decides; each is one entry in `VOD_SITES` + a captured fixture.
+   - Sites added 2026-10-31 on the owner's request ("everywhere" = all common VOD services, still a curated list): Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+. The owner has no subscriptions there, so they were analysed on **public, logged-out** detail pages only; logged-in layouts may differ and need the real-world check. filmtoro.cz is not in the list: its detail pages link ČSFD directly, so the main script already badges them. Another site = one `VOD_SITES` entry + a captured fixture.
    - Reviewer follow-ups that need the real search page: restrict `parseSearchPage` to the film/series result sections; consider memoising search candidates per URL in the background.
    - The 30-lookups-per-page-load cap also applies to long SPA sessions (Netflix never reloads). If the owner hits it in practice, revisit (e.g. a per-hour budget in the background instead).
 1. Create store developer accounts and submit (CWS one-time fee, Edge Partner Center, AMO). Follow [launch-plan.md](launch-plan.md).

@@ -45,18 +45,18 @@ Unofficial project, not affiliated with ČSFD.
 
 ## 4b. VOD detail views
 
-- **Sites:** `netflix.com`, `disneyplus.com`, `hbomax.com`, `tv.apple.com` and their subdomains, HTTPS only. The curated list lives in `src/lib/vod/detect.ts`. A separate content script runs only there. Adding a site is an owner decision.
+- **Sites:** `netflix.com`, `disneyplus.com`, `hbomax.com` (per-site hints) and `tv.apple.com`, `primevideo.com`, `skyshowtime.com`, `oneplay.cz`, `ceskatelevize.cz` (`/porady/`, `/ivysilani/` only), `iprima.cz` (`/filmy/`, `/serialy/` only) (generic), with subdomains, HTTPS only. The curated list lives in `src/lib/vod/detect.ts`. A separate content script runs only there. Adding a site is an owner decision.
 - **Detection:** a detail view is open when
   - the site's detail container is present (per-site hints: container, title, year, metadata row, series marker, anchor), or
-  - generically: an `img[alt]` or `h1–h3` whose text equals the document title (brand, a leading "Watch"/"Sledujte" and bidi marks removed), plus a year or film/series signal.
+  - generically: the best `h1–h3` or `img[alt]` (headings before images) whose text is the JSON-LD Movie/TVSeries name or a prefix of the document title (brand, a leading "Brand:", "Watch"/"Sledujte" and bidi marks removed; marketing suffixes like "– celý film online" therefore do not matter), else the JSON-LD name when the document title starts with it; plus a year or film/series signal. A trailing "(2024)" is removed from titles.
   - Titles: the on-page title first (usually Czech), then the document title when it differs (HBO Max shows the English one).
-  - Year and kind come **only from the metadata row** (the site's `meta` element, else the year element's parent; generically the page text without scripts/styles, capped at 10 000 characters). A synopsis or "more like this" list never decides them.
-  - Year: the site's year element, else a year next to a duration or season count, or after "Rok:"/"Year:". A lone year (e.g. "2026 Oscar® Winner") is ignored.
-  - Kind: the site's series marker, then the URL (`/show/`, `/series/` → series; `/movie/`, `/film/` → film), then the metadata row: a season count (`2 řady`, `4 části`, `minisérie`, `seasons` …; whole words only, so "sériích" does not count) → series, a duration → film, both or neither → unknown.
+  - Year and kind come **only from the metadata row** (the site's `meta` element, else the year element's parent; generically the nearest of up to 6 ancestors of the title whose text has a year, duration or season count; scripts/styles skipped, capped at 10 000 characters). A synopsis or "more like this" list never decides them.
+  - Year: the site's year element, else a year next to a duration or season count, or after "Rok:"/"Year:", else "(YYYY)" in the document title. A lone year (e.g. "2026 Oscar® Winner") and JSON-LD dates (often broadcast dates) are ignored.
+  - Kind: the site's series marker, then the URL (`/show(s)/`, `/series/`, `/serial(y)/`, `/tv/` → series; `/movie(s)/`, `/film(s)/`, `/filmy/` → film), then (generic) the JSON-LD type or `og:type` when their name matches the title, then the metadata row: a season count (`2 řady`, `4 části`, `minisérie`, `seasons` …; whole words only, so "sériích" does not count) → series, a duration → film, both or neither → unknown.
 - **Badge:** one at a time. It goes after the site's anchor (the year or metadata row) or after the title element when that is visible. Otherwise it floats in the bottom-right corner. It first links to the ČSFD search; closing the detail view removes it. The page is re-checked at most every 300 ms after DOM changes, and after the user's first click or key press.
 - **Requests:** a lookup (`findTitle`) is sent only when all hold:
   - the same title, year and kind were detected on **two checks in a row** (a detail view that renders in steps costs one lookup),
-  - the year is known,
+  - the year or the kind is known (without a year only a single same-named ČSFD entry of that kind can match),
   - the user has interacted with the page (`navigator.userActivation.hasBeenActive`, which page scripts cannot fake and which resets on every page load); opening a detail view is that interaction on all supported sites,
   - fewer than **30** lookups were sent on this page load.
   - Browse rows, tiles and hover previews never trigger anything. Reopening a title reuses its answer; an `error` or `blocked` answer is not reused, so reopening retries.
@@ -157,6 +157,6 @@ Unofficial project, not affiliated with ČSFD.
 
 ## 9. Budgets
 
-- Content script ≤ 8 kB gzip; VOD content script ≤ 6 kB gzip; background ≤ 10 kB gzip.
+- Content script ≤ 8 kB gzip; VOD content script ≤ 7 kB gzip; background ≤ 10 kB gzip.
 - A page without ČSFD links costs one native `querySelectorAll` on `href` plus one case-insensitive `textContent` test.
 - Unit-test coverage: 100 % lines/branches/functions/statements of `src/`.

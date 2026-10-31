@@ -93,7 +93,7 @@ Unofficial; not affiliated with ČSFD.
 
 - **Single purpose:** Show ČSFD film ratings next to links to ČSFD on web pages and next to the open title on streaming sites.
 - **Permission justification:**
-  - Content script on all sites: links to ČSFD can appear on any website. The script reads page text locally to find them. On Netflix, Disney+, HBO Max and Apple TV it also reads the title, year and type of the detail the user opens.
+  - Content script on all sites: links to ČSFD can appear on any website. The script reads page text locally to find them. On Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání (Česká televize) and Prima+ it also reads the title, year and type of the detail the user opens.
   - `https://www.csfd.cz/*`: download the public film page to read its rating. This happens for the first 10 distinct films visible on a page; others load after the user hovers or keyboard-focuses the link. On streaming sites, search ČSFD for the title whose detail the user opened (at most 2 searches + the film page).
   - `storage`: rating cache and settings.
   - `activeTab`: the per-site on/off switch and link count in the popup.
