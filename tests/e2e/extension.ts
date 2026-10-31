@@ -6,6 +6,8 @@ const extensionPath = join(import.meta.dirname, '..', '..', '.output', 'chrome-m
 
 /** Host used for test pages; served from tests/fixtures/pages. */
 export const SITE = 'https://warcenter.test';
+/** Mocked Netflix: `?fixture=<name>` serves tests/fixtures/pages/vod/<name>.html, else an empty page. */
+export const NETFLIX = 'https://www.netflix.com';
 
 export interface ExtensionFixtures {
   context: BrowserContext;
@@ -31,12 +33,15 @@ export const test = base.extend<ExtensionFixtures>({
         `--disable-extensions-except=${extensionPath}`,
         `--load-extension=${extensionPath}`,
         // Safety net: even an unmocked request can never reach the real csfd.cz.
-        '--host-resolver-rules=MAP www.csfd.cz 127.0.0.1:9, MAP warcenter.test 127.0.0.1:9',
+        '--host-resolver-rules=MAP www.csfd.cz 127.0.0.1:9, MAP warcenter.test 127.0.0.1:9, MAP www.netflix.com 127.0.0.1:9',
       ],
     });
     await context.route('https://www.csfd.cz/**', (route: Route) => {
       const url = route.request().url();
       csfdRequests.push(url);
+      if (url.includes('/hledat/')) {
+        return route.fulfill({ contentType: 'text/html', body: fixture('csfd/search.html') });
+      }
       const id = Number(/\/film\/(\d+)\//.exec(url)?.[1]);
       const page = csfdPages.get(id) ?? { status: 200, body: fixture('csfd/film.html') };
       return route.fulfill({ status: page.status, contentType: 'text/html', body: page.body });
@@ -46,6 +51,15 @@ export const test = base.extend<ExtensionFixtures>({
       return route.fulfill({
         contentType: 'text/html',
         body: `<!doctype html><html><head><meta charset="utf-8"></head><body>${fixture(`pages/${name}`)}</body></html>`,
+      });
+    });
+    await context.route(`${NETFLIX}/**`, (route: Route) => {
+      const name = new URL(route.request().url()).searchParams.get('fixture');
+      return route.fulfill({
+        contentType: 'text/html',
+        body: name
+          ? fixture(`pages/vod/${name}.html`)
+          : '<!doctype html><html><head><meta charset="utf-8"><title>Netflix</title></head><body><main></main></body></html>',
       });
     });
     await use(context);
