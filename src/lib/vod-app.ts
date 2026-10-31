@@ -20,6 +20,8 @@ export interface VodDeps {
   findTitle: (query: TitleQuery) => Promise<unknown>;
   /** Whether an element is rendered with a size (false for visually hidden headings). */
   isVisible: (el: Element) => boolean;
+  /** The user has interacted with this page (`navigator.userActivation.hasBeenActive`). */
+  isUserActive: () => boolean;
   createMutationObserver: (callback: MutationCallback) => MutationObserver;
   setTimer: (callback: () => void, ms: number) => unknown;
 }
@@ -35,9 +37,18 @@ const MAX_TITLE_LENGTH = 200;
 const FLOATING_STYLE = 'position:fixed;right:16px;bottom:16px;z-index:2147483647';
 const ERROR_RESULT: TitleResult = { status: 'error' };
 
+interface Shown {
+  key: string;
+  query: TitleQuery;
+  badge: Badge;
+  requested: boolean;
+}
+
 /**
  * Shows the ČSFD rating of the film or series whose detail view is open on a VOD site.
  * One badge at a time, next to the title (or floating in the corner); one lookup per title per page.
+ * A lookup needs a stable detection (two checks in a row), a year and a user who has interacted
+ * with the page; until then the badge only links to the ČSFD search.
  */
 export function startVodApp(deps: VodDeps): VodApp {
   const { doc, settings } = deps;
@@ -46,31 +57,62 @@ export function startVodApp(deps: VodDeps): VodApp {
   }
   const options: BadgeOptions = { t: deps.t, formatCount: deps.formatCount };
   const results = new Map<string, Promise<TitleResult>>();
-  let current: { key: string; badge: Badge } | null = null;
+  const controller = new AbortController();
+  let sent = 0;
+  let current: Shown | null = null;
   let scheduled = false;
   let stopped = false;
 
   const lookUp = (key: string, query: TitleQuery): Promise<TitleResult> | null => {
     const known = results.get(key);
-    if (known || !settings.showRatings || results.size >= VOD_LOOKUP_LIMIT) {
+    if (known || sent >= VOD_LOOKUP_LIMIT) {
       return known ?? null;
     }
-    const result = deps.findTitle(query).then(
-      (answer) => (isTitleResult(answer) ? answer : ERROR_RESULT),
-      () => ERROR_RESULT,
-    );
+    sent++;
+    const result = deps
+      .findTitle(query)
+      .then(
+        (answer) => (isTitleResult(answer) ? answer : ERROR_RESULT),
+        () => ERROR_RESULT,
+      )
+      .then((answer) => {
+        if (answer.status === 'error' || answer.status === 'blocked') {
+          results.delete(key); // reopening the title may try again
+        }
+        return answer;
+      });
     results.set(key, result);
     return result;
   };
 
+  const request = (shown: Shown): void => {
+    if (!settings.showRatings || shown.query.year === null || !deps.isUserActive()) {
+      return;
+    }
+    const result = lookUp(shown.key, shown.query);
+    if (!result) {
+      return;
+    }
+    shown.requested = true;
+    shown.badge.render({ kind: 'loading' });
+    void result.then((answer) => {
+      if (current === shown) {
+        render(shown.badge, answer);
+      }
+    });
+  };
+
   const show = (detected: DetectedTitle): void => {
     const query: TitleQuery = {
-      titles: detected.titles.slice(0, 2).map((t) => t.slice(0, MAX_TITLE_LENGTH)),
+      titles: detected.titles.slice(0, 2).map((t) => t.slice(0, MAX_TITLE_LENGTH).toWellFormed()),
       year: detected.year,
       kind: detected.kind,
     };
     const key = lookupKey(query);
     if (current?.key === key && current.badge.host.isConnected) {
+      if (!current.requested) {
+        request(current); // seen twice in a row: the detail view has settled
+      }
       return;
     }
     current?.badge.host.remove();
@@ -81,18 +123,17 @@ export function startVodApp(deps: VodDeps): VodApp {
       badge.host.setAttribute('style', FLOATING_STYLE);
       doc.body.append(badge.host);
     }
-    current = { key, badge };
-    const result = lookUp(key, query);
-    if (!result) {
-      badge.render({ kind: 'link' });
-      return;
+    badge.render({ kind: 'link' });
+    current = { key, query, badge, requested: false };
+    schedule();
+  };
+
+  const schedule = (): void => {
+    // Throttle, not debounce: streaming pages mutate constantly and a debounce would never fire.
+    if (!scheduled) {
+      scheduled = true;
+      deps.setTimer(check, CHECK_INTERVAL_MS);
     }
-    badge.render({ kind: 'loading' });
-    void result.then((answer) => {
-      if (current?.badge === badge) {
-        render(badge, answer);
-      }
-    });
   };
 
   const check = (): void => {
@@ -109,20 +150,23 @@ export function startVodApp(deps: VodDeps): VodApp {
     }
   };
 
-  const observer = deps.createMutationObserver(() => {
-    // Throttle, not debounce: streaming pages mutate constantly and a debounce would never fire.
-    if (!scheduled) {
-      scheduled = true;
-      deps.setTimer(check, CHECK_INTERVAL_MS);
-    }
-  });
+  const observer = deps.createMutationObserver(schedule);
   observer.observe(doc.documentElement, { childList: true, subtree: true, characterData: true });
+  // A first click or key press activates the page; re-check so a waiting badge can load.
+  for (const type of ['pointerdown', 'keydown']) {
+    doc.addEventListener(type, schedule, {
+      capture: true,
+      passive: true,
+      signal: controller.signal,
+    });
+  }
   check();
 
   return {
     stop() {
       stopped = true;
       observer.disconnect();
+      controller.abort();
       current?.badge.host.remove();
       current = null;
     },

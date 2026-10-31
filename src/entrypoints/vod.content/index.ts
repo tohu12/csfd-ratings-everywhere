@@ -5,17 +5,17 @@ import { startVodApp } from '@/lib/vod-app';
 import { browserTranslator } from '@/platform/i18n';
 
 export default defineContentScript({
-  // Only the curated VOD sites (SPEC §4b); `*.host` also matches the bare host.
-  matches: VOD_SITES.map((site) => `*://*.${site.host}/*`),
+  // Only the curated VOD sites (SPEC §4b), HTTPS only; `*.host` also matches the bare host.
+  matches: VOD_SITES.map((site) => `https://*.${site.host}/*`),
   runAt: 'document_idle',
-  async main() {
+  async main(ctx) {
     const site = findSite(location.hostname);
     if (!site) {
       return;
     }
     const settings = await loadSettings(browser.storage.sync);
     const numberFormat = new Intl.NumberFormat(browser.i18n.getUILanguage());
-    startVodApp({
+    const app = startVodApp({
       doc: document,
       url: () => location.href,
       site,
@@ -27,8 +27,12 @@ export default defineContentScript({
         browser.runtime.sendMessage({ type: 'findTitle', ...query } satisfies BackgroundRequest),
       // Visually hidden headings are 1×1 px; those get the floating badge instead.
       isVisible: (el) => el.getBoundingClientRect().width > 1,
+      // Sticky user activation: page scripts cannot fake it, and it resets on every page load.
+      isUserActive: () => navigator.userActivation.hasBeenActive,
       createMutationObserver: (callback) => new MutationObserver(callback),
       setTimer: (callback, ms) => setTimeout(callback, ms),
     });
+    // After an extension update the orphaned script must not keep observing a long-lived SPA tab.
+    ctx.onInvalidated(() => app.stop());
   },
 });

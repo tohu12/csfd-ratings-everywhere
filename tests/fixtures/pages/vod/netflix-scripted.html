@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- E2E only: a page script (no user gesture) opens a Netflix-like detail modal for "Duna" (2021). -->
+<html lang="cs"><head><meta charset="utf-8"><title>Netflix</title></head>
+<body><main></main>
+<script>
+  setTimeout(() => {
+    document.title = 'Duna – Netflix';
+    document.querySelector('main').insertAdjacentHTML(
+      'beforeend',
+      '<div class="previewModal--wrapper detail-modal"><div class="videoMetadata--container">' +
+        '<div class="videoMetadata--line"><div class="year">2021</div><span class="duration">2 h 35 m</span></div></div>' +
+        '<div class="about-header"><h3>O filmu <strong>Duna</strong></h3></div></div>',
+    );
+  }, 200);
+</script>
+</body></html>

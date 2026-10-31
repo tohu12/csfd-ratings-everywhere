@@ -159,10 +159,10 @@ describe('vod content entrypoint', () => {
   it('is registered for the curated VOD sites only', async () => {
     const { default: vod } = await import('@/entrypoints/vod.content/index');
     expect(vod.matches).toEqual([
-      '*://*.netflix.com/*',
-      '*://*.disneyplus.com/*',
-      '*://*.hbomax.com/*',
-      '*://*.tv.apple.com/*',
+      'https://*.netflix.com/*',
+      'https://*.disneyplus.com/*',
+      'https://*.hbomax.com/*',
+      'https://*.tv.apple.com/*',
     ]);
   });
 
@@ -192,15 +192,25 @@ describe('vod content entrypoint', () => {
       };
     }) as typeof fakeBrowser.runtime.sendMessage;
 
+    vi.stubGlobal('navigator', { ...navigator, userActivation: { hasBeenActive: true } });
+    let invalidate = () => {};
+    const ctx = { onInvalidated: (cb: () => void) => (invalidate = cb) };
     const { default: vod } = await import('@/entrypoints/vod.content/index');
     vi.useFakeTimers();
-    await vod.main({} as never);
+    await vod.main(ctx as never);
+    await vi.advanceTimersByTimeAsync(300); // the detection settles
     expect(sent).toEqual([{ type: 'findTitle', titles: ['Není úniku'], year: 1993, kind: 'film' }]);
     const badge = () => document.querySelector('[data-csfd-linker="badge"]');
     await vi.waitFor(() => expect(badge()?.shadowRoot?.textContent).toContain('81 %'));
 
     document.querySelector('.previewModal--wrapper')?.remove();
     await vi.advanceTimersByTimeAsync(300);
+    expect(badge()).toBeNull();
+
+    // An extension update invalidates the script: it stops observing the page.
+    document.body.append(document.importNode(page.body, true));
+    invalidate();
+    await vi.advanceTimersByTimeAsync(600);
     vi.useRealTimers();
     expect(badge()).toBeNull();
   });

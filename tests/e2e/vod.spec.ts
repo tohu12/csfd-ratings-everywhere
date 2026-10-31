@@ -2,30 +2,13 @@ import { expect, NETFLIX, test } from './extension';
 
 const badge = '[data-csfd-linker="badge"] >> a';
 
-/** What Netflix does when a tile is clicked: the detail modal appears and the title changes. */
-const DETAIL_MODAL = `
-  <div class="previewModal--wrapper detail-modal">
-    <div class="videoMetadata--container"><div class="videoMetadata--line">
-      <div class="year">2021</div><span class="duration">2 h 35 m</span>
-    </div></div>
-    <div class="about-header"><h3>O filmu <strong>Duna</strong></h3></div>
-  </div>`;
-
-test('looks a Netflix title up only once its detail view opens', async ({
-  context,
-  csfdRequests,
-}) => {
+// The user-activation gate (SPEC §4b) is covered by unit tests and the manual check: Chromium
+// under Playwright reports `navigator.userActivation.hasBeenActive` shortly after load anyway.
+test('looks a Netflix title up once its detail view opens', async ({ context, csfdRequests }) => {
   const page = await context.newPage();
-  await page.goto(`${NETFLIX}/browse`);
-  await page.waitForTimeout(500);
-  expect(csfdRequests).toEqual([]);
-  await expect(page.locator(badge)).toHaveCount(0);
-
-  await page.evaluate((html) => {
-    document.title = 'Duna – Netflix';
-    document.querySelector('main')?.insertAdjacentHTML('beforeend', html);
-  }, DETAIL_MODAL);
-
+  // The page's own script opens the detail modal, as Netflix does after a tile click.
+  await page.goto(`${NETFLIX}/browse?fixture=netflix-scripted`);
+  await page.mouse.click(5, 5);
   await expect(page.locator(badge)).toHaveText('65 %');
   await expect(page.locator(badge)).toHaveAttribute(
     'href',
@@ -37,18 +20,35 @@ test('looks a Netflix title up only once its detail view opens', async ({
   ]);
 
   // Closing the modal removes the badge; reopening it answers without new requests.
-  await page.evaluate(() => document.querySelector('.previewModal--wrapper')?.remove());
+  const modal = await page.evaluate(() => {
+    const el = document.querySelector('.previewModal--wrapper');
+    el?.remove();
+    return el?.outerHTML ?? '';
+  });
   await expect(page.locator(badge)).toHaveCount(0);
   await page.evaluate((html) => {
     document.querySelector('main')?.insertAdjacentHTML('beforeend', html);
-  }, DETAIL_MODAL);
+  }, modal);
   await expect(page.locator(badge)).toHaveText('65 %');
   expect(csfdRequests).toHaveLength(2);
+});
+
+test('loads nothing while browse rows render without a detail view', async ({
+  context,
+  csfdRequests,
+}) => {
+  const page = await context.newPage();
+  await page.goto(`${NETFLIX}/browse`);
+  await page.mouse.click(5, 5);
+  await page.waitForTimeout(700);
+  await expect(page.locator(badge)).toHaveCount(0);
+  expect(csfdRequests).toEqual([]);
 });
 
 test('shows "ČSFD ?" linking to the search when ČSFD has no certain match', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(`${NETFLIX}/browse?jbv=814862&fixture=netflix-film`);
+  await page.mouse.click(5, 5);
   await expect(page.locator(badge)).toHaveText('ČSFD ?');
   await expect(page.locator(badge)).toHaveAttribute(
     'href',

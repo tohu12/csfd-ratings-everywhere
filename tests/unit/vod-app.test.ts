@@ -20,11 +20,12 @@ function loadVodPage(name: string): void {
   );
 }
 
-/** A Netflix detail modal for any title, built like the real one. */
-function netflixModal(title: string, year: number): string {
+/** A Netflix detail modal for any title, built like the real one (no year: still rendering). */
+function netflixModal(title: string, year: number | null): string {
+  const yearEl = year === null ? '' : `<div class="year">${year}</div>`;
   return (
     '<div class="previewModal--wrapper detail-modal"><div class="videoMetadata--container">' +
-    `<div class="videoMetadata--line"><div class="year">${year}</div><span class="duration">1 h 40 m</span></div></div>` +
+    `<div class="videoMetadata--line">${yearEl}<span class="duration">1 h 40 m</span></div></div>` +
     `<div class="about-header"><h3>O pořadu <strong>${title}</strong></h3></div></div>`
   );
 }
@@ -34,16 +35,17 @@ describe('startVodApp', () => {
   let mutations: ReturnType<typeof fakeMutationObserver>;
   let findTitle: ReturnType<typeof vi.fn<(query: TitleQuery) => Promise<unknown>>>;
   let visible: boolean;
-  let url: string;
+  let active: boolean;
 
   const netflix = findSite('www.netflix.com');
-  const start = (settings: Partial<Settings> = {}, extra: Partial<VodDeps> = {}) => {
+  /** Starts the app without running the confirming re-check. */
+  const launch = (settings: Partial<Settings> = {}, extra: Partial<VodDeps> = {}) => {
     if (!netflix) {
       throw new Error('Netflix profile missing');
     }
     return startVodApp({
       doc: document,
-      url: () => url,
+      url: () => FILM_URL,
       site: netflix,
       hostname: 'www.netflix.com',
       settings: { ...DEFAULT_SETTINGS, ...settings },
@@ -51,18 +53,30 @@ describe('startVodApp', () => {
       formatCount: String,
       findTitle,
       isVisible: () => visible,
+      isUserActive: () => active,
       createMutationObserver: mutations.create,
       setTimer: timers.set,
       ...extra,
     });
   };
+  /** Starts the app and lets the detection settle (the confirming re-check runs). */
+  const start = (settings: Partial<Settings> = {}, extra: Partial<VodDeps> = {}) => {
+    const app = launch(settings, extra);
+    timers.runAll();
+    return app;
+  };
   const badge = () => document.querySelector(badgeSel);
   const pill = () => badge()?.shadowRoot?.querySelector('a');
   const settle = () => vi.waitFor(() => expect(pill()?.className).not.toContain('loading'));
-  /** The page changed: the observer fires and the throttled check runs. */
+  /** The page changed: the observer fires and the throttled checks run. */
   const mutate = () => {
     mutations.add(document.body);
     timers.runAll();
+  };
+  const open = (title: string, year: number | null) => {
+    document.title = `${title} – Netflix`;
+    document.body.innerHTML = netflixModal(title, year);
+    mutate();
   };
 
   beforeEach(() => {
@@ -70,18 +84,54 @@ describe('startVodApp', () => {
     mutations = fakeMutationObserver();
     findTitle = vi.fn(async () => ({ status: 'found', id: 42, rating: OK }));
     visible = true;
-    url = FILM_URL;
+    active = true;
     loadVodPage('netflix-film');
   });
 
-  it('shows the rating next to the year of the open detail view', async () => {
-    start();
+  it('links to the search at once and looks the title up once the detection is stable', async () => {
+    launch();
+    expect(pill()?.title).toBe('badgeOpen');
+    expect(findTitle).not.toHaveBeenCalled();
+    timers.runAll();
     expect(findTitle).toHaveBeenCalledWith({ titles: ['Není úniku'], year: 1993, kind: 'film' });
     expect(badge()?.previousElementSibling?.className).toBe('year');
     expect(pill()?.className).toContain('loading');
     await settle();
     expect(pill()?.textContent).toBe('78 %');
     expect(pill()?.href).toBe('https://www.csfd.cz/film/42/prehled/');
+  });
+
+  it('sends only the settled query while the detail view is still rendering', () => {
+    document.body.replaceChildren();
+    launch();
+    document.title = 'Duna – Netflix';
+    document.body.innerHTML = netflixModal('Duna', null);
+    mutations.add(document.body);
+    document.body.innerHTML = netflixModal('Duna', 2021);
+    mutate();
+    expect(findTitle).toHaveBeenCalledTimes(1);
+    expect(findTitle).toHaveBeenCalledWith({ titles: ['Duna'], year: 2021, kind: 'film' });
+  });
+
+  it('never looks a title up without a year', () => {
+    document.body.replaceChildren();
+    start();
+    open('Duna', null);
+    expect(badge()).not.toBeNull();
+    expect(findTitle).not.toHaveBeenCalled();
+    expect(pill()?.title).toBe('badgeOpen');
+  });
+
+  it('waits for the user to interact with the page before asking ČSFD', () => {
+    active = false;
+    start();
+    mutate();
+    expect(findTitle).not.toHaveBeenCalled();
+    expect(pill()?.title).toBe('badgeOpen');
+    active = true;
+    document.dispatchEvent(new MouseEvent('pointerdown'));
+    timers.runAll();
+    expect(findTitle).toHaveBeenCalledTimes(1);
   });
 
   it('shows "ČSFD ?" linking to the ČSFD search when the match is unsure', async () => {
@@ -103,11 +153,17 @@ describe('startVodApp', () => {
     expect(pill()?.textContent).toBe(text);
   });
 
-  it('renders error when messaging fails', async () => {
-    findTitle.mockRejectedValue(new Error('Extension context invalidated'));
+  it('renders error when messaging fails, and retries when the title is reopened', async () => {
+    findTitle.mockRejectedValueOnce(new Error('Extension context invalidated'));
     start();
     await settle();
     expect(pill()?.title).toBe('badgeError');
+    open('Duna', 2021);
+    await settle();
+    open('Není úniku', 1993);
+    await settle();
+    expect(pill()?.textContent).toBe('78 %');
+    expect(findTitle).toHaveBeenCalledTimes(3);
   });
 
   it('only links to the ČSFD search when ratings are turned off', () => {
@@ -128,10 +184,7 @@ describe('startVodApp', () => {
     document.body.replaceChildren();
     start();
     expect(badge()).toBeNull();
-    expect(findTitle).not.toHaveBeenCalled();
-    document.body.insertAdjacentHTML('beforeend', netflixModal('Duna', 2021));
-    document.title = 'Duna – Netflix';
-    mutate();
+    open('Duna', 2021);
     expect(findTitle).toHaveBeenCalledWith({ titles: ['Duna'], year: 2021, kind: 'film' });
     expect(badge()).not.toBeNull();
   });
@@ -170,8 +223,7 @@ describe('startVodApp', () => {
     let resolveFirst: (value: unknown) => void = () => {};
     findTitle.mockImplementationOnce(() => new Promise((resolve) => (resolveFirst = resolve)));
     start();
-    document.body.innerHTML = netflixModal('Duna', 2021);
-    mutate();
+    open('Duna', 2021);
     expect(findTitle).toHaveBeenCalledTimes(2);
     await settle();
     resolveFirst({ status: 'unsure' });
@@ -190,11 +242,19 @@ describe('startVodApp', () => {
   it(`stops asking after ${VOD_LOOKUP_LIMIT} titles on one page and only links to the search`, () => {
     start();
     for (let i = 1; i <= VOD_LOOKUP_LIMIT; i++) {
-      document.body.innerHTML = netflixModal(`Film ${i}`, 2000);
-      mutate();
+      open(`Film ${i}`, 2000);
     }
     expect(findTitle).toHaveBeenCalledTimes(VOD_LOOKUP_LIMIT);
     expect(pill()?.title).toBe('badgeOpen');
+  });
+
+  it('sends well-formed titles of at most 200 characters', () => {
+    document.body.replaceChildren();
+    start();
+    open(`${'x'.repeat(199)}😀`, 2021);
+    const [query] = findTitle.mock.calls[0] ?? [];
+    expect(query?.titles[0]).toHaveLength(200);
+    expect(query?.titles[0]?.isWellFormed()).toBe(true);
   });
 
   it('observes the whole document, including the <title>', () => {
@@ -206,13 +266,15 @@ describe('startVodApp', () => {
     });
   });
 
-  it('stop disconnects the observer, removes the badge and ignores pending checks', () => {
+  it('stop disconnects the observer and listeners, removes the badge and ignores pending checks', () => {
     const app = start();
     mutations.add(document.body);
     app.stop();
     expect(mutations.observer.disconnect).toHaveBeenCalled();
     expect(badge()).toBeNull();
     timers.runAll();
+    document.dispatchEvent(new KeyboardEvent('keydown'));
+    expect(timers.pending).toEqual([]);
     expect(badge()).toBeNull();
   });
 });
