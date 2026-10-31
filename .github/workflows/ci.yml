@@ -30,6 +30,12 @@ jobs:
           count=$(jq '(.dependencies // {}) | length' package.json)
           if [ "$count" != "0" ]; then echo "::error::package.json must not have runtime dependencies"; exit 1; fi
 
+      - name: "@types/node matches the Node major in .nvmrc"
+        run: |
+          node_major=$(cut -d. -f1 .nvmrc)
+          types_major=$(jq -r '.devDependencies["@types/node"]' package.json | tr -dc '0-9.' | cut -d. -f1)
+          if [ "$node_major" != "$types_major" ]; then echo "::error::@types/node is $types_major, .nvmrc is $node_major"; exit 1; fi
+
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test:coverage
