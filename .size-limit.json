@@ -6,6 +6,12 @@
     "gzip": true
   },
   {
+    "name": "VOD content script",
+    "path": ".output/chrome-mv3/content-scripts/vod.js",
+    "limit": "6 kB",
+    "gzip": true
+  },
+  {
     "name": "background",
     "path": ".output/chrome-mv3/background.js",
     "limit": "10 kB",

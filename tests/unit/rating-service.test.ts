@@ -3,7 +3,7 @@ import { createBackoff } from '@/lib/backoff';
 import { createLookupCache, createRatingCache, DEFAULT_LOOKUP_TTL, DEFAULT_TTL } from '@/lib/cache';
 import type { Limiter } from '@/lib/queue';
 import type { Rating } from '@/lib/rating';
-import { createRatingService, type FetchPage, lookupKey, retryAfterMs } from '@/lib/rating-service';
+import { createRatingService, type FetchPage, retryAfterMs } from '@/lib/rating-service';
 import { fixture } from '../helpers/fixtures';
 import { memoryStore } from '../helpers/memory-store';
 
@@ -293,15 +293,6 @@ describe('findTitle', () => {
   it('returns error when the limiter throws unexpectedly', async () => {
     s = setup(csfd(), () => Promise.reject(new Error('boom')));
     expect(await s.service.findTitle(DUNA)).toEqual({ status: 'error' });
-  });
-});
-
-describe('lookupKey', () => {
-  it('normalises titles and keeps year and kind', () => {
-    expect(lookupKey({ titles: ['Špetka lásky', 'Salted Love'], year: 2026, kind: 'series' })).toBe(
-      'spetka lasky/salted love|2026|series',
-    );
-    expect(lookupKey({ titles: ['Duna'], year: null, kind: null })).toBe('duna||');
   });
 });
 

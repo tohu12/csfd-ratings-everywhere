@@ -155,6 +155,57 @@ describe('content entrypoint', () => {
   });
 });
 
+describe('vod content entrypoint', () => {
+  it('is registered for the curated VOD sites only', async () => {
+    const { default: vod } = await import('@/entrypoints/vod.content/index');
+    expect(vod.matches).toEqual([
+      '*://*.netflix.com/*',
+      '*://*.disneyplus.com/*',
+      '*://*.hbomax.com/*',
+      '*://*.tv.apple.com/*',
+    ]);
+  });
+
+  it('does nothing on a host without a VOD profile', async () => {
+    const send = vi.fn();
+    fakeBrowser.runtime.sendMessage = send as typeof fakeBrowser.runtime.sendMessage;
+    const { default: vod } = await import('@/entrypoints/vod.content/index');
+    await vod.main({} as never);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('looks up the open Netflix title and re-checks after page changes', async () => {
+    const page = new DOMParser().parseFromString(
+      fixture('pages/vod/netflix-film.html'),
+      'text/html',
+    );
+    document.title = page.title;
+    document.body.replaceChildren(document.importNode(page.body, true));
+    vi.stubGlobal('location', new URL('https://www.netflix.com/browse?jbv=814862'));
+    const sent: unknown[] = [];
+    fakeBrowser.runtime.sendMessage = vi.fn(async (message: unknown) => {
+      sent.push(message);
+      return {
+        status: 'found',
+        id: 7,
+        rating: { status: 'ok', percent: 81, count: 1200, title: 'F' },
+      };
+    }) as typeof fakeBrowser.runtime.sendMessage;
+
+    const { default: vod } = await import('@/entrypoints/vod.content/index');
+    vi.useFakeTimers();
+    await vod.main({} as never);
+    expect(sent).toEqual([{ type: 'findTitle', titles: ['Není úniku'], year: 1993, kind: 'film' }]);
+    const badge = () => document.querySelector('[data-csfd-linker="badge"]');
+    await vi.waitFor(() => expect(badge()?.shadowRoot?.textContent).toContain('81 %'));
+
+    document.querySelector('.previewModal--wrapper')?.remove();
+    await vi.advanceTimersByTimeAsync(300);
+    vi.useRealTimers();
+    expect(badge()).toBeNull();
+  });
+});
+
 describe('popup entrypoint', () => {
   it('boots the popup with browser APIs', async () => {
     loadExtensionPage('popup');

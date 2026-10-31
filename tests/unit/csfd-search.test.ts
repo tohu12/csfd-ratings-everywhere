@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { type Candidate, parseSearchPage, pickMatch, searchUrl } from '@/lib/csfd-search';
+import {
+  type Candidate,
+  lookupKey,
+  parseSearchPage,
+  pickMatch,
+  searchUrl,
+} from '@/lib/csfd-search';
 import { fixture } from '../helpers/fixtures';
 
 const film = (id: number, titles: string[], year: number | null): Candidate => ({
@@ -117,5 +123,14 @@ describe('parseSearchPage', () => {
       '<article><a href="/film/1-s/2-e/" class="film-title-name">Díl 1</a>' +
       '<span class="film-title-info"><span class="info">(epizoda)</span></span></article>';
     expect(parseSearchPage(html)).toEqual([]);
+  });
+});
+
+describe('lookupKey', () => {
+  it('normalises titles and keeps year and kind', () => {
+    expect(lookupKey({ titles: ['Špetka lásky', 'Salted Love'], year: 2026, kind: 'series' })).toBe(
+      'spetka lasky/salted love|2026|series',
+    );
+    expect(lookupKey({ titles: ['Duna'], year: null, kind: null })).toBe('duna||');
   });
 });

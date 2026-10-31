@@ -3,7 +3,7 @@ export type TitleKind = 'film' | 'series';
 /** A film or series shown on a VOD detail view. */
 export interface DetectedTitle {
   /** Distinct names, best first: the on-page (usually Czech) title, then the document title. */
-  titles: string[];
+  titles: [string, ...string[]];
   year: number | null;
   kind: TitleKind | null;
   /** Where the badge goes; null when nothing suitable is on the page. */
@@ -132,7 +132,10 @@ export function detectTitle(doc: Document, url: URL, site: VodSite): DetectedTit
     return null;
   }
   return {
-    titles: distinct([pageTitle, docTitle]),
+    titles:
+      docTitle && normalizeTitle(docTitle) !== normalizeTitle(pageTitle)
+        ? [pageTitle, docTitle]
+        : [pageTitle],
     year,
     kind,
     anchor: (site.anchor && root.querySelector(site.anchor)) || titleEl,
@@ -189,17 +192,4 @@ function kindOf(root: Element, url: URL, site: VodSite, text: string): TitleKind
     return 'series';
   }
   return FILM_DURATION.test(text) ? 'film' : null;
-}
-
-function distinct(titles: (string | null)[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const title of titles) {
-    const key = title && normalizeTitle(title);
-    if (title && key && !seen.has(key)) {
-      seen.add(key);
-      out.push(title);
-    }
-  }
-  return out;
 }

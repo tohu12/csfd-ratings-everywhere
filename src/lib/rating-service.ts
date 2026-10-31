@@ -1,12 +1,18 @@
 import type { Backoff } from './backoff';
 import type { LookupCache, RatingCache } from './cache';
-import { type Match, parseSearchPage, pickMatch, searchUrl, type TitleQuery } from './csfd-search';
+import {
+  lookupKey,
+  type Match,
+  parseSearchPage,
+  pickMatch,
+  searchUrl,
+  type TitleQuery,
+} from './csfd-search';
 import { ratingUrl } from './csfd-url';
 import type { TitleResult } from './messages';
 import type { Limiter } from './queue';
 import { BLOCKED, ERROR, type Rating } from './rating';
 import { isAnubisPage, parseFilmPage } from './rating-parser';
-import { normalizeTitle } from './vod/detect';
 
 export interface PageResponse {
   status: number;
@@ -52,11 +58,6 @@ export function retryAfterMs(header: string | null, now = Date.now()): number {
   }
   const date = Date.parse(header);
   return Number.isNaN(date) ? 0 : Math.max(0, date - now);
-}
-
-/** Lookup cache key: the same query from any page shares one entry. */
-export function lookupKey({ titles, year, kind }: TitleQuery): string {
-  return [titles.map(normalizeTitle).join('/'), year ?? '', kind ?? ''].join('|');
 }
 
 /** cache → backoff → limiter → fetch → parse, with in-flight de-duplication per id. */

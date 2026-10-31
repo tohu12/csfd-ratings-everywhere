@@ -19,6 +19,11 @@ export interface Candidate {
 
 export type Match = number | 'ambiguous' | 'notfound';
 
+/** Lookup cache key: the same query from any page shares one entry. */
+export function lookupKey({ titles, year, kind }: TitleQuery): string {
+  return [titles.map(normalizeTitle).join('/'), year ?? '', kind ?? ''].join('|');
+}
+
 export function searchUrl(title: string): string {
   return `https://www.csfd.cz/hledat/?q=${encodeURIComponent(title)}`;
 }
