@@ -25,6 +25,8 @@ export interface VodSite {
   title?: string;
   /** Element carrying the release year. */
   year?: string;
+  /** Metadata row (year, duration, season count). Default: the year element's parent. */
+  meta?: string;
   /** Present only on series. */
   series?: string;
   /** Element the badge is inserted after. */
@@ -40,6 +42,7 @@ export const VOD_SITES: readonly VodSite[] = [
     root: '.previewModal--wrapper.detail-modal',
     title: '.about-header strong',
     year: '.videoMetadata--container .year',
+    meta: '.videoMetadata--container',
     series: '[data-uia="episode-selector"]',
     anchor: '.videoMetadata--container .year',
   },
@@ -48,6 +51,7 @@ export const VOD_SITES: readonly VodSite[] = [
     brand: 'Disney+',
     root: '[data-testid="explore-details-view"]',
     title: '[data-testid="details-title-treatment"] img[alt]',
+    meta: '[data-testid="masthead-metadata"]',
     anchor: '[data-testid="masthead-metadata"]',
   },
   {
@@ -99,17 +103,25 @@ export function cleanDocumentTitle(raw: string, brand: string): string | null {
   return title && normalizeTitle(title) !== brandKey ? title : null;
 }
 
+// `\b` is ASCII-only: it would end "2 séri" inside "2 sériích". END is a Unicode word end.
+const END = '(?![\\p{L}\\p{N}])';
+// Counts have 1–3 digits and must not start inside a longer number (linear on long digit runs).
+const COUNT = '(?<!\\d)\\d{1,3}\\s*';
 const YEAR = '((?:19|20)\\d{2})';
-const DURATION = '\\d+\\s*(?:h|hod|hodin[ay]?|min|m)\\b';
-const SEASONS = '\\d+\\s*(?:řad[ay]?|séri[eí]|sezón[ay]?|seasons?|část[ií]?|dílů|episodes?)\\b';
-const YEAR_BEFORE = new RegExp(`\\b${YEAR}\\s*[•·|,]?\\s*(?:${DURATION}|${SEASONS})`, 'iu');
-const YEAR_AFTER = new RegExp(`${DURATION}(?:\\s*\\d+\\s*m\\b)?\\s*[•·|,]?\\s*${YEAR}\\b`, 'iu');
-const YEAR_LABEL = new RegExp(`\\b(?:rok|year)\\s*:\\s*${YEAR}\\b`, 'iu');
-const SERIES_WORDS = new RegExp(`${SEASONS}|\\bminis[ée]ri[ea]\\b|\\bmini-?series\\b`, 'iu');
+const DURATION = `${COUNT}(?:h|hod|hodin[ay]?|min|m)${END}`;
+const SEASONS = `${COUNT}(?:řad[ay]?|séri[eí]|sezón[ay]?|seasons?|část[ií]?|dílů|episodes?)${END}`;
+const YEAR_BEFORE = new RegExp(`(?<!\\d)${YEAR}\\s*[•·|,]?\\s*(?:${DURATION}|${SEASONS})`, 'iu');
+const YEAR_AFTER = new RegExp(
+  `${DURATION}(?:\\s*\\d{1,2}\\s*m${END})?\\s*[•·|,]?\\s*${YEAR}(?!\\d)`,
+  'iu',
+);
+const YEAR_LABEL = new RegExp(`\\b(?:rok|year)\\s*:\\s*${YEAR}(?!\\d)`, 'iu');
+const SERIES_WORDS = new RegExp(`${SEASONS}|\\bminis[ée]ri[ea]${END}|\\bmini-?series${END}`, 'iu');
 const FILM_DURATION = new RegExp(DURATION, 'iu');
 const SERIES_PATH = /\/(?:show|series|serial|tv-show)s?\//i;
 const FILM_PATH = /\/(?:movie|film)s?\//i;
-const TEXT_NODE_LIMIT = 400;
+const TEXT_LIMIT = 10_000;
+const NOT_TEXT = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE']);
 
 /** Finds the film or series of the open detail view, or null when there is none. */
 export function detectTitle(doc: Document, url: URL, site: VodSite): DetectedTitle | null {
@@ -125,21 +137,34 @@ export function detectTitle(doc: Document, url: URL, site: VodSite): DetectedTit
   if (!pageTitle) {
     return null;
   }
-  const text = visibleText(root);
-  const year = site.year ? yearIn(root.querySelector(site.year)) : yearFromText(text);
+  const yearEl = site.year ? root.querySelector(site.year) : null;
+  const text = metadataText(root, site, yearEl);
+  const year = site.year ? yearIn(yearEl) : yearFromText(text);
   const kind = kindOf(root, url, site, text);
   if (!site.root && year === null && kind === null) {
     return null;
   }
   return {
-    titles:
-      docTitle && normalizeTitle(docTitle) !== normalizeTitle(pageTitle)
-        ? [pageTitle, docTitle]
-        : [pageTitle],
+    titles: titlesOf(pageTitle, docTitle),
     year,
     kind,
     anchor: (site.anchor && root.querySelector(site.anchor)) || titleEl,
   };
+}
+
+/**
+ * Text of the metadata row only: a synopsis or "more like this" list can mention "2 série" for a
+ * film. Generic sites have no row, so their whole (capped) text is used.
+ */
+function metadataText(root: Element, site: VodSite, yearEl: Element | null): string {
+  const meta = site.meta ? root.querySelector(site.meta) : yearEl ? yearEl.parentElement : root;
+  return meta ? visibleText(meta) : '';
+}
+
+function titlesOf(pageTitle: string, docTitle: string | null): [string, ...string[]] {
+  return docTitle && normalizeTitle(docTitle) !== normalizeTitle(pageTitle)
+    ? [pageTitle, docTitle]
+    : [pageTitle];
 }
 
 function findTitleElement(root: Element, docTitle: string): Element | null {
@@ -157,14 +182,26 @@ function elementText(el: Element): string {
   return text.replace(INVISIBLE, '').trim();
 }
 
-/** Text nodes joined by spaces, so adjacent elements (`<div>2026</div><span>4 části</span>`) stay apart. */
+/**
+ * Text nodes joined by spaces, so adjacent elements (`<div>2026</div><span>4 části</span>`) stay
+ * apart. Script and style contents are skipped; the result is capped at TEXT_LIMIT characters.
+ */
 function visibleText(root: Element): string {
-  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const parts: string[] = [];
-  while (walker.nextNode() && parts.length < TEXT_NODE_LIMIT) {
-    parts.push(String(walker.currentNode.nodeValue));
+  const walker = root.ownerDocument.createTreeWalker(
+    root,
+    NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+    (node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return NodeFilter.FILTER_ACCEPT;
+      }
+      return NOT_TEXT.has(node.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+    },
+  );
+  let text = '';
+  while (text.length < TEXT_LIMIT && walker.nextNode()) {
+    text += ` ${String(walker.currentNode.nodeValue)}`;
   }
-  return parts.join(' ').replace(INVISIBLE, '').replace(/\s+/g, ' ');
+  return text.slice(0, TEXT_LIMIT).replace(INVISIBLE, '').replace(/\s+/g, ' ');
 }
 
 function yearIn(el: Element | null): number | null {
@@ -188,8 +225,10 @@ function kindOf(root: Element, url: URL, site: VodSite, text: string): TitleKind
   if (FILM_PATH.test(url.pathname)) {
     return 'film';
   }
-  if (SERIES_WORDS.test(text)) {
-    return 'series';
+  const seasons = SERIES_WORDS.test(text);
+  const duration = FILM_DURATION.test(text);
+  if (seasons === duration) {
+    return null; // neither, or contradictory: let the year and title decide alone
   }
-  return FILM_DURATION.test(text) ? 'film' : null;
+  return seasons ? 'series' : 'film';
 }

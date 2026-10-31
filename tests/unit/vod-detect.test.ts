@@ -234,3 +234,62 @@ describe('detectTitle generic heuristics', () => {
     expect(run('<h1>DUNA</h1><p>2021 · 2h</p>')).toMatchObject({ titles: ['DUNA'] });
   });
 });
+
+describe('detectTitle reads year and kind from the metadata row only', () => {
+  const netflix = VOD_SITES.find((s) => s.brand === 'Netflix');
+  const apple = VOD_SITES.find((s) => s.brand === 'Apple TV');
+  const modal = (meta: string, synopsis: string) =>
+    parse(
+      '<title>Mission: Impossible – Netflix</title>' +
+        '<div class="previewModal--wrapper detail-modal">' +
+        `<div class="videoMetadata--container"><div class="videoMetadata--line">${meta}</div></div>` +
+        `<p class="synopsis">${synopsis}</p>` +
+        '<div class="about-header"><h3>O filmu <strong>Mission: Impossible</strong></h3></div></div>',
+    );
+  const run = (doc: Document) =>
+    netflix && detectTitle(doc, new URL('https://www.netflix.com/browse?jbv=1'), netflix);
+
+  it('ignores season words in the synopsis of a film', () => {
+    const doc = modal(
+      '<div class="year">1996</div><span>1 h 50 min</span>',
+      'Po 2 sériích misí… 3 řady agentů.',
+    );
+    expect(run(doc)).toMatchObject({ year: 1996, kind: 'film' });
+  });
+
+  it('does not read inflected Czech words as a season count', () => {
+    const doc = modal('<div class="year">2010</div><span>v 10 sezónách</span>', '');
+    expect(run(doc)).toMatchObject({ kind: null });
+  });
+
+  it('leaves the kind open when the row has both a duration and a season count', () => {
+    const doc = modal('<div class="year">2020</div><span>1 h 5 m</span><span>2 řady</span>', '');
+    expect(run(doc)).toMatchObject({ kind: null });
+  });
+
+  it('has no kind or year when the metadata row is missing', () => {
+    const doc = parse(
+      '<title>Duna – Netflix</title><div class="previewModal--wrapper detail-modal">' +
+        '<p>2021 · 2 h 35 m</p><div class="about-header"><strong>Duna</strong></div></div>',
+    );
+    expect(run(doc)).toMatchObject({ titles: ['Duna'], year: null, kind: null });
+  });
+
+  it('skips script and style contents in generic detection', () => {
+    const doc = parse(
+      '<title>Watch Duna - Apple TV</title><h1>Duna</h1>' +
+        '<script>{"releaseYear":"1984 · 2 h 17 m"}</script><style>.x{}</style><p>Sci-fi</p>',
+    );
+    expect(apple && detectTitle(doc, new URL('https://tv.apple.com/cz/x'), apple)).toBeNull();
+  });
+
+  it('caps the scanned text and copes with long digit runs', () => {
+    const digits = '9'.repeat(50_000);
+    const doc = parse(
+      `<title>Watch Duna - Apple TV</title><h1>Duna</h1><p>${digits}</p><p>${'x '.repeat(20_000)}</p><p>2021 · 2h</p>`,
+    );
+    const found = apple && detectTitle(doc, new URL('https://tv.apple.com/cz/x'), apple);
+    // The year sits beyond the 10 000-character text budget.
+    expect(found).toBeNull();
+  });
+});
