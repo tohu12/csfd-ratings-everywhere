@@ -81,6 +81,21 @@ describe('startPopup', () => {
   });
 
   it.each([
+    'https://www.csfd.cz/film/1773198-poberta/prehled/',
+    'https://m.csfd.cz/',
+    'https://csfd.sk/film/1',
+  ])('explains that nothing is needed on ČSFD itself (%s)', async (url) => {
+    deps.getActiveTab = async () => ({ id: 3, url });
+    $<HTMLInputElement>('#site-toggle').checked = true;
+    await startPopup(deps);
+    expect($<HTMLInputElement>('#site-toggle').disabled).toBe(true);
+    expect($<HTMLInputElement>('#site-toggle').checked).toBe(false);
+    expect($('#site-name').textContent).toBe('T:popupOnCsfd');
+    expect($('#link-count').textContent).toBe('–');
+    expect(deps.sendToTab).not.toHaveBeenCalled();
+  });
+
+  it.each([
     ['no content script answers', () => Promise.reject(new Error('no receiver'))],
     ['the answer is malformed', async () => ({ links: 'many' })],
   ])('shows a dash when %s', async (_, sendToTab) => {

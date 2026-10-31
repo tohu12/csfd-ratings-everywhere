@@ -12,6 +12,7 @@ export const MESSAGE_KEYS = [
   'untitled',
   'popupSite',
   'popupSiteUnavailable',
+  'popupOnCsfd',
   'popupEnabled',
   'popupLinks',
   'popupOptions',

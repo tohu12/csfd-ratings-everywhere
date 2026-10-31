@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { findCsfdUrls, mightContainCsfd, parseCsfdUrl, ratingUrl } from '@/lib/csfd-url';
+import {
+  findCsfdUrls,
+  isCsfdHost,
+  mightContainCsfd,
+  parseCsfdUrl,
+  ratingUrl,
+} from '@/lib/csfd-url';
 
 describe('mightContainCsfd', () => {
   it.each([
@@ -128,5 +134,21 @@ describe('parseCsfdUrl', () => {
 describe('ratingUrl', () => {
   it('builds the canonical overview URL', () => {
     expect(ratingUrl(42)).toBe('https://www.csfd.cz/film/42/prehled/');
+  });
+});
+
+describe('isCsfdHost', () => {
+  it.each([
+    ['csfd.cz', true],
+    ['www.csfd.cz', true],
+    ['M.CSFD.CZ', true],
+    ['csfd.sk', true],
+    ['beta.csfd.sk', true],
+    ['www.csfd.cz.', true],
+    ['notcsfd.cz', false],
+    ['csfd.cz.evil.example', false],
+    ['warcenter.cz', false],
+  ])('%s → %s', (host, expected) => {
+    expect(isCsfdHost(host)).toBe(expected);
   });
 });

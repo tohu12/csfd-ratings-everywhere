@@ -1,3 +1,4 @@
+import { isCsfdHost } from './csfd-url';
 import { element } from './dom';
 import { localizeDocument, type Translate } from './i18n';
 import { type ContentRequest, isContentStats } from './messages';
@@ -44,9 +45,12 @@ export async function startPopup({
   });
 
   const host = webHostname(tab?.url);
-  if (host === null) {
+  const onCsfd = host !== null && isCsfdHost(host);
+  if (host === null || onCsfd) {
+    // Nothing to switch: browser pages can't run content scripts, and on ČSFD it is excluded.
     siteToggle.disabled = true;
-    siteName.textContent = t('popupSiteUnavailable');
+    siteToggle.checked = false;
+    siteName.textContent = t(onCsfd ? 'popupOnCsfd' : 'popupSiteUnavailable');
   } else {
     siteName.textContent = host;
     siteToggle.checked = isHostEnabled({ ...settings, enabled: true }, host);
@@ -56,7 +60,7 @@ export async function startPopup({
   }
 
   linkCount.textContent = '–';
-  if (tab?.id !== undefined && host !== null) {
+  if (tab?.id !== undefined && host !== null && !onCsfd) {
     const stats = await sendToTab(tab.id, { type: 'getStats' }).catch(() => null);
     if (isContentStats(stats)) {
       linkCount.textContent = String(stats.links);

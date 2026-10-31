@@ -61,6 +61,14 @@ export function parseCsfdUrl(url: string): CsfdLink | null {
   return id === null ? null : { id, href: parsed.href };
 }
 
+/**
+ * ČSFD's own sites (`csfd.cz`, `csfd.sk` and subdomains), where the content script is
+ * excluded (`excludeMatches` in the content entrypoint) because ČSFD shows ratings itself.
+ */
+export function isCsfdHost(hostname: string): boolean {
+  return /(^|\.)csfd\.(cz|sk)\.?$/i.test(hostname); // `\.?`: fully qualified `www.csfd.cz.`
+}
+
 /** The page the rating is read from. Always the canonical Czech host. */
 export function ratingUrl(id: number): string {
   return `https://www.csfd.cz/film/${id}/prehled/`;

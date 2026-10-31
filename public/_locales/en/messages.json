@@ -57,6 +57,9 @@
   "popupSiteUnavailable": {
     "message": "Not available on this page"
   },
+  "popupOnCsfd": {
+    "message": "Not needed on ČSFD; the rating is right there on the page."
+  },
   "popupEnabled": {
     "message": "On everywhere"
   },

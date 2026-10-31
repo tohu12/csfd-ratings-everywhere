@@ -102,7 +102,7 @@ Unofficial project, not affiliated with ČSFD.
 - `display` (default `badge`): `badge` | `tooltip` (§5).
 - `disabledHosts` (default []): hostnames, normalised (lower case, no `www.`), where the content script does nothing.
 - Popup:
-  - toggle for the current site,
+  - toggle for the current site (disabled on browser pages, and on ČSFD itself with the note "not needed on ČSFD"),
   - global toggle,
   - number of ČSFD links on the current page,
   - link to options.

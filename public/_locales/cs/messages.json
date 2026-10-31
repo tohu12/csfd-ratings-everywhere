@@ -57,6 +57,9 @@
   "popupSiteUnavailable": {
     "message": "Na této stránce nelze použít"
   },
+  "popupOnCsfd": {
+    "message": "Na ČSFD není potřeba, hodnocení vidíš přímo na stránce."
+  },
   "popupEnabled": {
     "message": "Zapnuto všude"
   },
