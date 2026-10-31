@@ -91,14 +91,14 @@ Unofficial; not affiliated with ČSFD.
 
 ## Chrome Web Store – Privacy practices tab
 
-- **Single purpose:** Show ČSFD film ratings next to links to ČSFD on web pages.
+- **Single purpose:** Show ČSFD film ratings next to links to ČSFD on web pages and next to the open title on streaming sites.
 - **Permission justification:**
-  - Content script on all sites: links to ČSFD can appear on any website. The script reads page text locally to find them.
-  - `https://www.csfd.cz/*`: download the public film page to read its rating. This happens for the first 10 distinct films visible on a page; others load after the user hovers or keyboard-focuses the link.
+  - Content script on all sites: links to ČSFD can appear on any website. The script reads page text locally to find them. On Netflix, Disney+, HBO Max and Apple TV it also reads the title, year and type of the detail the user opens.
+  - `https://www.csfd.cz/*`: download the public film page to read its rating. This happens for the first 10 distinct films visible on a page; others load after the user hovers or keyboard-focuses the link. On streaming sites, search ČSFD for the title whose detail the user opened (at most 2 searches + the film page).
   - `storage`: rating cache and settings.
   - `activeTab`: the per-site on/off switch and link count in the popup.
 - **Remote code:** No.
-- **Data usage:** the developer collects no data. Requests to csfd.cz reveal to ČSFD which films are linked on pages the user views, as opening those links would. Firefox declares this as `websiteContent` in the manifest.
+- **Data usage:** the developer collects no data. Requests to csfd.cz reveal to ČSFD which films are linked on pages the user views, as opening those links would, and which titles' details the user opens on streaming sites. Firefox declares this as `websiteContent` in the manifest.
 - **Category suggestion:** pick in the dashboard. "Tools" or "Entertainment" fit best.
 
 ## Firefox (AMO)

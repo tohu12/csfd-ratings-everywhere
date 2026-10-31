@@ -6,6 +6,8 @@ The source of truth for behaviour. Reviewers check diffs against this file; chan
 
 On any web page, find links to ČSFD film pages, written as plain text or as existing `<a>` elements. Make plain-text links clickable and show the film's ČSFD rating next to them.
 
+On selected streaming (VOD) sites, which never link to ČSFD, show the rating of the film or series whose detail view is open, found by its title (§4b).
+
 Unofficial project, not affiliated with ČSFD.
 
 ## 2. Recognised URLs
@@ -41,6 +43,31 @@ Unofficial project, not affiliated with ČSFD.
 - A film known on the page (`ok`/`none`) is never requested again on that page. Concurrent requests and cache lookups for one film are shared.
 - An automatic load that ends in `error` (e.g. a full queue) leaves the badge idle so a hover can retry. `blocked` is shown.
 
+## 4b. VOD detail views
+
+- **Sites:** `netflix.com`, `disneyplus.com`, `hbomax.com`, `tv.apple.com` and their subdomains. The curated list lives in `src/lib/vod/detect.ts`. A separate content script runs only there. Adding a site is an owner decision.
+- **Detection:** a detail view is open when
+  - the site's detail container is present (per-site hints: container, title, year, series marker, anchor), or
+  - generically: an `img[alt]` or `h1–h3` whose text equals the document title (brand, a leading "Watch"/"Sledujte" and bidi marks removed), plus a year or film/series signal.
+  - Titles: the on-page title first (usually Czech), then the document title when it differs (HBO Max shows the English one).
+  - Year: the site's year element. Otherwise a year next to a duration or season count, or after "Rok:"/"Year:". A lone year (e.g. "2026 Oscar® Winner") is ignored.
+  - Kind: the site's series marker, then the URL (`/show/`, `/series/` → series; `/movie/`, `/film/` → film), then season words (`řada`, `série`, `části`, `seasons`, `minisérie` …), then a duration (→ film).
+- **Badge:** one at a time. It goes after the site's anchor (the year or metadata row) or after the title element when that is visible. Otherwise it floats in the bottom-right corner. Closing the detail view removes it. The page is re-checked at most every 300 ms after DOM changes.
+- **Requests:**
+  - Opening a detail view counts as the user's action. Browse rows, tiles and hover previews never trigger anything.
+  - One `findTitle` per distinct title per page load. Reopening the same title reuses the answer.
+  - At most **30** lookups per page load; beyond that the badge only links to the ČSFD search.
+  - Background: lookup cache → ČSFD search for the first title → the second title only if the first finds no match → the film page via `getRating` (cache first). An uncached title costs at most 3 requests.
+  - Page scripts can fake a detail view; the VOD-only hosts and the 30-lookup cap bound that.
+- **Matching:**
+  - exact title after normalisation (case, diacritics, punctuation, bidi marks), against the Czech or the original ČSFD name,
+  - film: year ±1; series: ČSFD start year ≤ the VOD year (VOD sites show the latest season's year),
+  - kind must agree when both sides know it,
+  - several fits → the one with the exact year if unique,
+  - anything else is `unsure`. Seasons and episodes in the results are ignored.
+- **`unsure`** shows "ČSFD ?" linking to the ČSFD search for the first title. A possibly wrong percentage is never shown.
+- `showRatings` off: the badge only links to the ČSFD search and nothing is fetched. `disabledHosts` applies as everywhere.
+
 ## 5. Display modes (`display` setting)
 
 - `badge` (default): an inline pill right after every link (§5a).
@@ -63,6 +90,7 @@ Unofficial project, not affiliated with ČSFD.
 | blocked          | `ČSFD !`         | neutral                              | "ČSFD did not return the rating right now. Try again later." |
 | error            | `ČSFD`           | neutral                              | "Rating unavailable"               |
 | ratings disabled | `ČSFD`           | neutral                              | "Open on ČSFD"                     |
+| unsure (VOD)     | `ČSFD ?`         | neutral                              | "Not sure which film this is. Search on ČSFD." |
 
 - Texts are localised (cs, sk, en).
 
@@ -72,9 +100,10 @@ Unofficial project, not affiliated with ČSFD.
 - Messages:
   - `getRating` (cache, then network), sent automatically for the first 10 films per page or after a user action (§4),
   - `peekRating` (cache only),
-  - `clearCache`.
+  - `findTitle` (§4b): 1–2 titles of 1–200 characters, year 1800–2100 or null, kind `film`/`series` or null; answers `found` (id + rating), `unsure`, `blocked` or `error`,
+  - `clearCache` (ratings and lookups).
   - Every message is validated, and the sender must be this extension.
-- Requests go to `https://www.csfd.cz/film/<id>/prehled/` with default browser headers and the user's csfd.cz cookies, exactly like the user opening the link.
+- Requests go to `https://www.csfd.cz/film/<id>/prehled/` and, for §4b only, `https://www.csfd.cz/hledat/?q=<title>`, with default browser headers and the user's csfd.cz cookies, exactly like the user opening the link. Search requests share the backoff, rate limit and Anubis detection below.
 - **Forbidden:** circumventing ČSFD's bot protection (Anubis): no proof-of-work solving, no header spoofing, no hidden tabs/iframes/offscreen documents, no prefetching beyond §4.
 - Slow-down handling:
   - an Anubis page → `blocked`, and all fetching pauses with exponential backoff (10 min, ×2, max 6 h),
@@ -88,13 +117,15 @@ Unofficial project, not affiliated with ČSFD.
 - Cache (`storage.local`):
   - `ok` for 7 days, `none` for 1 day, HTTP 404/410 as `error` for 1 day,
   - `blocked` and other errors are not cached,
-  - at most 2 000 entries; the oldest are evicted first.
+  - at most 2 000 entries; the oldest are evicted first,
+  - title lookups (normalised titles + year + kind → id) separately: a found id for 30 days, `unsure` for 1 day, at most 2 000 entries.
 - A storage failure never turns a fetched rating into an error.
 - Parsing:
   1. JSON-LD: the item with `aggregateRating` (`ratingValue` scaled by `bestRating`, `ratingCount`, `name`), else an item whose `@type` is Movie/TVSeries/TVSeason/TVEpisode/CreativeWorkSeason (→ `none`). Other JSON-LD (WebSite, Organization…) is ignored.
   2. Fallback: `.film-rating-average` text + `<h1>` title.
   3. A page with neither → `error`.
   - The colour is derived from the percentage (§5a), not read from the page.
+  - Search pages: each `<article>` with a `.film-title-name` link to `/film/<id>/` (the last id of nested URLs), the year and type from `.film-title-info` (`seriál`/`TV pořad` → series; `série`/`epizoda` → skipped; else film) and the original name from `.search-name`.
 
 ## 7. Settings (`storage.sync`)
 
@@ -118,12 +149,12 @@ Unofficial project, not affiliated with ČSFD.
 
 ## 8. Permissions & privacy
 
-- `storage`, `activeTab`; host permission `https://www.csfd.cz/*`; content script on `<all_urls>`.
+- `storage`, `activeTab`; host permission `https://www.csfd.cz/*`; content script on `<all_urls>`, plus the VOD content script on the §4b sites (covered by `<all_urls>`, no extra permission).
 - No analytics or remote code. Nothing leaves the browser except the requests to csfd.cz described in §4 and §6.
-- Those requests reveal to ČSFD which films are linked on pages the user views. Firefox declares this as `data_collection_permissions.required: ["websiteContent"]`; Chrome's privacy form says the same.
+- Those requests reveal to ČSFD which films are linked on pages the user views and, on VOD sites, which titles' detail views the user opens. Firefox declares this as `data_collection_permissions.required: ["websiteContent"]`; Chrome's privacy form says the same.
 
 ## 9. Budgets
 
-- Content script ≤ 8 kB gzip; background ≤ 10 kB gzip.
+- Content script ≤ 8 kB gzip; VOD content script ≤ 6 kB gzip; background ≤ 10 kB gzip.
 - A page without ČSFD links costs one native `querySelectorAll` on `href` plus one case-insensitive `textContent` test.
 - Unit-test coverage: 100 % lines/branches/functions/statements of `src/`.
