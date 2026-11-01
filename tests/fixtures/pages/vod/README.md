@@ -87,4 +87,8 @@ Surveyed logged out (curl + headless/headed Chromium). Revisit if the situation 
 - **KVIFF.TV** (formerly Aerovod): films only; the year ("Norsko, 2024") is not next to the duration, so the lookup goes by kind only.
 - **JustWatch:** an aggregator. The document title is marketing text ("Sledování titulu Oppenheimer: kde sledovat film online?") and an `h2` repeats it, so it uses hints, with "Původní název:" as the second title.
 
+## Nightly canary
+
+`tests/canary/sites.ts` lists one public page per service, the same URLs as these fixtures; `pnpm canary` runs the detector on the live pages. When the canary issue says **gone**, pick another public title, update `sites.ts` (and recapture the fixture if you replace it). When it says **broken**, recapture the fixture and fix the site (`/add-vod-site`).
+
 Run `pnpm test` after replacing a fixture. A failure means the service changed its layout: update its `VOD_SITES` entry in `src/lib/vod/detect.ts`.

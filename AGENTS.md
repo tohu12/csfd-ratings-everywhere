@@ -75,7 +75,7 @@ If you find a recurring review issue that a tool could catch, add the rule or te
 - csfd.cz is contacted only as SPEC §4 allows: the first 10 distinct visible films per page, plus real user actions. Never raise the cap or add prefetching, "warm-up" or bulk loading without the owner's decision.
 - Never add permissions or host permissions without updating SPEC §8, README and docs/PRIVACY.md.
 - Behaviour matches SPEC.md. Architecture follows the rules above (DI, one-way data flow, guards at boundaries).
-- Tests assert behaviour, not implementation, and never hit the real network. ČSFD responses come from `tests/fixtures/csfd/`.
+- Tests assert behaviour, not implementation, and never hit the real network. ČSFD responses come from `tests/fixtures/csfd/`. The one exception is the nightly VOD canary (`tests/canary/`, `pnpm canary`, `.github/workflows/vod-canary.yml`): it loads public streaming pages, is not part of `pnpm check`, and never contacts ČSFD.
 
 ## Testing
 
