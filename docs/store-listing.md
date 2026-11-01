@@ -24,7 +24,7 @@ Keep in sync with `public/_locales/*/messages.json` (`extName`, `extDescription`
 
 **Name (≤ 75):** ČSFD hodnocení všude
 
-**Summary (≤ 132):** Z odkazů na ČSFD na jakémkoli webu udělá klikatelné odkazy a ukáže u nich hodnocení filmu v procentech. Neoficiální.
+**Summary (≤ 132, = `extDescription`, Chrome takes it from the manifest):** Neoficiální. Hodnocení ČSFD u odkazů na jakémkoli webu i u filmů na Netflixu, Disney+, HBO Max a dalších streamovacích službách.
 
 **Description:**
 ```
@@ -49,7 +49,7 @@ Neoficiální rozšíření, není spojeno s ČSFD.
 
 **Name:** ČSFD hodnotenie všade
 
-**Summary:** Z odkazov na ČSFD na akomkoľvek webe urobí klikateľné odkazy a ukáže pri nich hodnotenie filmu v percentách. Neoficiálne.
+**Summary:** Neoficiálne. Hodnotenie ČSFD pri odkazoch na akomkoľvek webe aj na Netflixe, Disney+, HBO Max a ďalších streamovacích službách.
 
 **Description:**
 ```
@@ -71,7 +71,7 @@ Súkromie: žiadna analytika ani zber dát. Otvorený zdrojový kód (MIT). Neof
 
 **Name:** ČSFD Ratings Everywhere
 
-**Summary:** Turns links to ČSFD (the Czech-Slovak film database) on any website into clickable links showing the film's rating. Unofficial.
+**Summary:** Unofficial. ČSFD film ratings next to ČSFD links on any website and on Netflix, Disney+, HBO Max and other streaming services.
 
 **Description:**
 ```

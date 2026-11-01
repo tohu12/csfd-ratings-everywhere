@@ -36,24 +36,28 @@ const csfdSearch = `<html><article><a href="/film/101-posledni-leto-u-jezera/" c
 
 // Service names as plain text only: no logos or artwork of the services.
 const STREAMING_CAPTION = {
-  cs: 'Hodnocení ČSFD i na Netflixu, Disney+, HBO Max a 12 dalších službách',
-  en: 'ČSFD ratings on Netflix, Disney+, HBO Max and 12 more services',
+  cs: 'Hodnocení ČSFD i na streamovacích službách',
+  en: 'ČSFD ratings on streaming services too',
 };
+// Keep in sync with VOD_SITES (src/lib/vod/detect.ts).
+const STREAMING_SERVICES =
+  'Netflix · Disney+ · HBO Max · Apple TV · Prime Video · SkyShowtime · Oneplay · iVysílání ČT · Prima+ · Voyo · Canal+ · Rakuten TV · MUBI · KVIFF.TV · JustWatch';
 
 const streaming = (caption) => `<!doctype html><html lang="cs"><head><meta charset="utf-8">
 <title>${FILMS[101].name} | Demo kino</title><style>
   body{margin:0;background:#101114;color:#eee;font:18px/1.5 system-ui}
   .caption{background:linear-gradient(135deg,#ba0305,#7d0204);color:#fff;text-align:center;
-    padding:22px 32px;font:700 30px system-ui}
+    padding:16px 32px;font:700 30px system-ui}
+  .caption small{display:block;font:500 19px/1.45 system-ui;margin-top:6px}
   .top{padding:18px 48px;font:700 20px system-ui;letter-spacing:.04em;color:#fff}
-  .hero{margin:0 48px;height:200px;border-radius:14px;
+  .hero{margin:0 48px;height:150px;border-radius:14px;
     background:linear-gradient(120deg,#e9a35b 0%,#b5546a 45%,#2c3e6b 100%)}
   main{margin:16px 34px;max-width:820px;zoom:1.4}
   h1{font:700 44px system-ui;margin:0 0 10px;display:inline-block}
   .meta{color:#aaa;margin-bottom:18px;font-size:19px}
   p{color:#ccc;margin:0 0 26px}
   .play{display:inline-block;background:#fff;color:#111;font-weight:700;padding:12px 30px;border-radius:8px}
-</style></head><body><div class="caption">${caption}</div><div class="top">DEMO KINO</div><div class="hero"></div><main>
+</style></head><body><div class="caption">${caption}<small>${STREAMING_SERVICES}</small></div><div class="top">DEMO KINO</div><div class="hero"></div><main>
 <h1>${FILMS[101].name}</h1>
 <div class="meta"><span>2024</span> · <span>1 h 52 min</span> · Drama</div>
 <p>Poslední prázdniny před odjezdem na studia. Čtyři kamarádi, jedno jezero a léto, na které nezapomenou.</p>
