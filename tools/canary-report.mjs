@@ -14,6 +14,10 @@ for (const line of text.split('\n').filter(Boolean)) {
 const results = [...byFixture.values()];
 const failed = results.filter((r) => r.status === 'gone' || r.status === 'broken');
 const icon = { ok: '✅', unavailable: '⚪', gone: '🟠', broken: '🔴' };
+// Details carry text from third-party pages: a code span keeps @-mentions, links and HTML inert
+// in the issue, and `|` would break the table.
+const inert = (text) =>
+  `\`${String(text).slice(0, 200).replaceAll('`', "'").replaceAll('|', '\\|')}\``;
 
 const lines = [
   failed.length
@@ -23,7 +27,7 @@ const lines = [
   '| | Page | Result |',
   '|---|---|---|',
   ...results.map(
-    (r) => `| ${icon[r.status]} ${r.status} | [${r.fixture}](${r.url}) | ${r.detail} |`,
+    (r) => `| ${icon[r.status]} ${r.status} | [${r.fixture}](${r.url}) | ${inert(r.detail)} |`,
   ),
   '',
   '- 🟠 **gone**: the title left the catalogue. Pick another public title of that service and update `tests/canary/sites.ts` (and the fixture, see the VOD fixture README).',

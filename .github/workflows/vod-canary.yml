@@ -3,26 +3,32 @@ name: VOD canary
 # Every night: run the real detector on live public VOD detail pages (tests/canary/).
 # A page that is gone or no longer detected opens (or updates) one issue labelled `canary`, which
 # notifies the owner; a green run closes it. Never contacts ČSFD (AGENTS.md).
+# Two jobs: the one loading third-party pages has a read-only token; only the reporting job, which
+# checks nothing out and runs no page code, may write issues.
 # GitHub pauses scheduled workflows after 60 days without a commit: re-enable it under Actions.
 on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: read
-  issues: write
+permissions: {}
 
 concurrency:
   group: vod-canary
   cancel-in-progress: false
 
 jobs:
-  canary:
+  check:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      failed: ${{ steps.report.outputs.failed }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -35,7 +41,7 @@ jobs:
         run: pnpm canary
         continue-on-error: true
 
-      - name: Report
+      - name: Build the report
         id: report
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -45,10 +51,28 @@ jobs:
           echo "failed=$([ $? -ne 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           cat report.md >> "$GITHUB_STEP_SUMMARY"
 
+      - uses: actions/upload-artifact@v7
+        with:
+          name: canary-report
+          path: report.md
+          retention-days: 14
+
+  report:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: canary-report
+
       - name: Open or update the alarm issue
-        if: steps.report.outputs.failed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
+        if: needs.check.outputs.failed == 'true'
         run: |
           gh label create canary --color B60205 --description "Nightly VOD canary" --force
           issue=$(gh issue list --label canary --state open --json number --jq '.[0].number // empty')
@@ -58,17 +82,11 @@ jobs:
             { echo "@${{ github.repository_owner }} the nightly VOD check found pages that need attention."; echo; cat report.md; } > body.md
             gh issue create --title "VOD canary: streaming pages need attention" --label canary --body-file body.md
           fi
+          exit 1
 
       - name: Close the alarm issue after a green run
-        if: steps.report.outputs.failed == 'false'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        if: needs.check.outputs.failed == 'false'
         run: |
           for issue in $(gh issue list --label canary --state open --json number --jq '.[].number'); do
             gh issue close "$issue" --comment "Fixed: the nightly check is green again. $RUN_URL"
           done
-
-      - name: Fail the run on an alarm
-        if: steps.report.outputs.failed == 'true'
-        run: exit 1

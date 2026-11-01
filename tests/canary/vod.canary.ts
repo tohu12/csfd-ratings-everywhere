@@ -23,12 +23,18 @@ const RESULTS_FILE = 'test-results/canary.jsonl';
 
 for (const page of CANARY_PAGES) {
   test(page.fixture, async ({ page: tab }, info) => {
-    const report = async (status: Status, detail: string) => {
+    const write = async (status: Status, detail: string) => {
       const result: Result = { fixture: page.fixture, url: page.url, status, detail };
-      info.annotations.push({ type: status, description: detail });
       await mkdir('test-results', { recursive: true });
       await appendFile(RESULTS_FILE, `${JSON.stringify(result)}\n`);
     };
+    const report = async (status: Status, detail: string) => {
+      info.annotations.push({ type: status, description: detail });
+      await write(status, detail);
+    };
+    // Overwritten by the real result; a check that crashes (redirect mid-read, a host removed
+    // from VOD_SITES) must alarm, not count as green.
+    await write('broken', 'the check crashed before finishing; see the run log');
     const site = findSite(new URL(page.url).hostname);
     if (!site) {
       throw new Error(`${page.url} is not a supported VOD host`);
