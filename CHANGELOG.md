@@ -4,6 +4,11 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.3.0 – 2026-11-01
+
+### Added
+- When ČSFD pages repeatedly can't be read (ČSFD has probably changed its website), the toolbar icon shows "!" and the popup offers a "Report it" link to a prefilled GitHub issue. Nothing is sent automatically.
+
 ## 1.2.0 – 2026-11-01
 
 ### Added

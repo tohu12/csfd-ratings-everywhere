@@ -1,6 +1,6 @@
 # Project status
 
-Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-11-01 (v1.2.0 tagged: VOD on 15 services, red UI; store images regenerated; GitHub Release published, not in stores yet; legal risk overview added).
+Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-11-01 (v1.3.0 tagged: health signal when ČSFD pages can't be read; v1.2.0 brought VOD on 15 services and the red UI; not in stores yet).
 
 ## In one paragraph
 "ČSFD hodnocení všude / ČSFD Ratings Everywhere" is a WXT MV3 browser extension (Chrome, Edge, Firefox).
@@ -12,13 +12,13 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 ## State
 | Area | State |
 |---|---|
-| Code | **v1.2.0** (2026-11-01) adds VOD ratings (SPEC §4b) and the red icon/UI; v1.1.0 had the welcome page and the blue UI. VOD: detail views on Netflix, Disney+, HBO Max, JustWatch (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo SK, Canal+, Rakuten TV, MUBI, KVIFF.TV (generic detector) → ČSFD search → rating. Icon and UI accent are ČSFD red since 2026-11-01. Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. Test counts and bundle sizes: run `pnpm check` and `pnpm size`. |
+| Code | **v1.3.0** (2026-11-01) adds the health signal (SPEC §6a: "!" on the icon + report link in the popup). **v1.2.0** (2026-11-01) added VOD ratings (SPEC §4b) and the red icon/UI; v1.1.0 had the welcome page and the blue UI. VOD: detail views on Netflix, Disney+, HBO Max, JustWatch (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo SK, Canal+, Rakuten TV, MUBI, KVIFF.TV (generic detector) → ČSFD search → rating. Icon and UI accent are ČSFD red since 2026-11-01. Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. Test counts and bundle sizes: run `pnpm check` and `pnpm size`. |
 | VOD real-world check | **Not done yet.** Detection verified on DOM captured 2026-10-31 from the owner's logged-in sessions (Netflix, Disney+, HBO Max) and on public logged-out pages for the rest (2026-10-31 and 2026-11-01, `tests/fixtures/pages/vod/`). The search parser is tested on **real** ČSFD search pages (`search-silo.html`, `search-duna.html`, saved by the owner 2026-11-01); the real result links end in `/prehled/`, which the synthetic page lacked. Unknown: whether `/hledat/` requests pass Anubis like `/film/` ones. |
 | Real-world check | 2026-10-31, headed Chrome with the owner on 8 warcenter.cz topics: **8/8 correct**, incl. series-episode URLs and unrated films. Extension requests to csfd.cz **pass Anubis**. |
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
 | Website | GitHub Pages from `/docs`: https://tohu12.github.io/csfd-ratings-everywhere/ (landing page + `PRIVACY.html`). |
 | Release pipeline | Tag `v*` → `release.yml` builds Chrome/Edge/Firefox zips (+ Firefox sources zip) into a **draft** GitHub Release. Store upload is manual for now. |
-| Store packages | Use the **v1.2.0** release zips (published 2026-11-01; red icon, VOD). v1.1.0 and older have the blue icon. The images in `docs/store/` were regenerated 2026-11-01 with the red UI. |
+| Store packages | Use the **v1.3.0** release zips (red icon, VOD, health signal). v1.2.0 lacks the health signal. v1.1.0 and older have the blue icon. The images in `docs/store/` were regenerated 2026-11-01 with the red UI. |
 
 ## Decisions (and why). Don't revert without asking the owner
 - **Fetching** (SPEC §4):
