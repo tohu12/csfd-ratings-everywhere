@@ -1,6 +1,7 @@
 // Renders store screenshots (1280×800) and the small promo tile (440×280) from the real build.
 // Usage: pnpm build && node tools/store-assets.mjs
-// Uses a fictional demo forum and fictional films: no third-party sites, no real ratings.
+// Uses a fictional demo forum, a fictional streaming page and fictional films: no third-party
+// branding, no real ratings.
 // Localized output needs Linux (see the --lang note below); CI workflow: store-assets.yml.
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -10,6 +11,9 @@ const root = join(import.meta.dirname, '..');
 const extensionPath = join(root, '.output', 'chrome-mv3');
 const outDir = join(root, 'docs', 'store');
 const SITE = 'https://filmove-forum.example';
+// A curated VOD host (SPEC §4b), so the VOD script runs; the page itself is fictional and the
+// screenshot shows no URL.
+const VOD = 'https://kviff.tv/videos/posledni-leto-u-jezera';
 
 const FILMS = {
   101: { name: 'Poslední léto u jezera', rating: 86, count: 12480 },
@@ -26,6 +30,35 @@ const csfdPage = (id) => {
   }
   return `<html><script type="application/ld+json">${JSON.stringify(ld)}</script><h1>${film.name}</h1></html>`;
 };
+
+const csfdSearch = `<html><article><a href="/film/101-posledni-leto-u-jezera/" class="film-title-name">${FILMS[101].name}</a>
+<span class="film-title-info"><span class="info">(2024)</span></span></article></html>`;
+
+// Service names as plain text only: no logos or artwork of the services.
+const STREAMING_CAPTION = {
+  cs: 'Hodnocení ČSFD i na Netflixu, Disney+, HBO Max a 12 dalších službách',
+  en: 'ČSFD ratings on Netflix, Disney+, HBO Max and 12 more services',
+};
+
+const streaming = (caption) => `<!doctype html><html lang="cs"><head><meta charset="utf-8">
+<title>${FILMS[101].name} | Demo kino</title><style>
+  body{margin:0;background:#101114;color:#eee;font:18px/1.5 system-ui}
+  .caption{background:linear-gradient(135deg,#ba0305,#7d0204);color:#fff;text-align:center;
+    padding:22px 32px;font:700 30px system-ui}
+  .top{padding:18px 48px;font:700 20px system-ui;letter-spacing:.04em;color:#fff}
+  .hero{margin:0 48px;height:200px;border-radius:14px;
+    background:linear-gradient(120deg,#e9a35b 0%,#b5546a 45%,#2c3e6b 100%)}
+  main{margin:16px 34px;max-width:820px;zoom:1.4}
+  h1{font:700 44px system-ui;margin:0 0 10px;display:inline-block}
+  .meta{color:#aaa;margin-bottom:18px;font-size:19px}
+  p{color:#ccc;margin:0 0 26px}
+  .play{display:inline-block;background:#fff;color:#111;font-weight:700;padding:12px 30px;border-radius:8px}
+</style></head><body><div class="caption">${caption}</div><div class="top">DEMO KINO</div><div class="hero"></div><main>
+<h1>${FILMS[101].name}</h1>
+<div class="meta"><span>2024</span> · <span>1 h 52 min</span> · Drama</div>
+<p>Poslední prázdniny před odjezdem na studia. Čtyři kamarádi, jedno jezero a léto, na které nezapomenou.</p>
+<span class="play">▶ Přehrát</span>
+</main></body></html>`;
 
 const post = (author, text) =>
   `<article><header><b>${author}</b><span>před 2 hodinami</span></header><p>${text}</p></article>`;
@@ -79,15 +112,21 @@ async function launch(lang) {
       // Sets the UI language (and so chrome.i18n) on Linux. macOS ignores it: run this in CI
       // (.github/workflows/store-assets.yml) to get correctly localized screenshots.
       `--lang=${lang}`,
-      '--host-resolver-rules=MAP www.csfd.cz 127.0.0.1:9, MAP filmove-forum.example 127.0.0.1:9',
+      '--host-resolver-rules=MAP www.csfd.cz 127.0.0.1:9, MAP filmove-forum.example 127.0.0.1:9, MAP kviff.tv 127.0.0.1:9',
     ],
   });
   await context.route('https://www.csfd.cz/**', (route) => {
+    if (route.request().url().includes('/hledat/')) {
+      return route.fulfill({ contentType: 'text/html', body: csfdSearch });
+    }
     const id = Number(/\/film\/(\d+)\//.exec(route.request().url())?.[1]);
     return route.fulfill({ contentType: 'text/html', body: csfdPage(id) });
   });
   await context.route(`${SITE}/**`, (route) =>
     route.fulfill({ contentType: 'text/html', body: forum }),
+  );
+  await context.route('https://kviff.tv/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: streaming(STREAMING_CAPTION[lang]) }),
   );
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
   return { context, extensionId: new URL(worker.url()).host };
@@ -167,17 +206,12 @@ for (const lang of ['cs', 'en']) {
   }, popupShot.toString('base64'));
   await page.screenshot({ path: join(outDir, `screenshot-4-popup-${lang}.png`) });
 
-  // 5. Settings page (back to the default badge mode).
-  await options.locator('#display').selectOption('badge');
-  await options.locator('#status').filter({ hasText: /\S/ }).waitFor();
-  await options.evaluate(() => {
-    document.body.style.zoom = '1.5';
-    const status = document.getElementById('status');
-    if (status) {
-      status.textContent = '';
-    }
-  });
-  await options.screenshot({ path: join(outDir, `screenshot-5-settings-${lang}.png`) });
+  // 5. Streaming site: the rating next to the open title (SPEC §4b).
+  await page.goto(VOD);
+  // The lookup waits for the user's first interaction with the page.
+  await page.mouse.click(640, 700);
+  await page.locator('[data-csfd-linker="badge"] a').getByText('86 %').waitFor();
+  await page.screenshot({ path: join(outDir, `screenshot-5-streaming-${lang}.png`) });
   await context.close();
 }
 

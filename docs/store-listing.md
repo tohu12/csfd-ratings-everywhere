@@ -16,7 +16,7 @@ Keep in sync with `public/_locales/*/messages.json` (`extName`, `extDescription`
 | Asset | File | Where |
 |---|---|---|
 | Store icon 128×128 (96 px art + 16 px padding) | `public/icon/128.png` | CWS, Edge, AMO (AMO takes the icon from the package) |
-| Screenshots 1280×800, max 5, order 1→5 | `docs/store/screenshot-{1..5}-*-{cs,en}.png` | CWS (per locale), Edge, AMO |
+| Screenshots 1280×800, max 5, order 1→5 (5 = streaming sites: a fictional page, service names as text only, no logos) | `docs/store/screenshot-{1..5}-*-{cs,en}.png` | CWS (per locale), Edge, AMO |
 | Small promo tile 440×280 | `docs/store/promo-small-440x280.png` | CWS (required), Edge |
 | Marquee 1400×560 | `docs/store/promo-marquee-1400x560.png` | CWS (used only if featured) |
 
