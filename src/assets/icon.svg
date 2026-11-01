@@ -2,8 +2,8 @@
   <title>ČSFD Ratings Everywhere</title>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3a5f9a"/>
-      <stop offset="1" stop-color="#17294d"/>
+      <stop offset="0" stop-color="#ba0305"/>
+      <stop offset="1" stop-color="#7d0204"/>
     </linearGradient>
   </defs>
   <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)"/>

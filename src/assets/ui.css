@@ -1,7 +1,7 @@
 :root {
   color-scheme: light dark;
-  --accent: #2f528a;
-  --heading: #2f528a;
+  --accent: #ba0305;
+  --heading: #ba0305;
   --fg: #1f1f1f;
   --bg: #fff;
   --muted: #6b6b6b;
@@ -19,7 +19,7 @@
     --bg: #1f1f1f;
     --muted: #a0a0a0;
     --line: #3a3a3a;
-    --heading: #9bb8e8;
+    --heading: #f07a7c;
   }
 }
 body {

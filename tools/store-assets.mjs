@@ -55,7 +55,7 @@ const tile = (
 ) => `<!doctype html><html><head><meta charset="utf-8"><style>
   html,body{margin:0;width:${width}px;height:${height}px;overflow:hidden}
   body{--s:${scale};display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:calc(14px * var(--s));background:linear-gradient(135deg,#3a5f9a,#17294d);color:#fff;
+    gap:calc(14px * var(--s));background:linear-gradient(135deg,#ba0305,#7d0204);color:#fff;
     font:600 calc(30px * var(--s)) system-ui}
   img{width:calc(84px * var(--s));height:calc(84px * var(--s))}
   .row{display:flex;gap:calc(10px * var(--s));align-items:center}

@@ -4,6 +4,9 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+### Changed
+- Icon and popup/settings accent use ČSFD red (`#ba0305`) instead of blue; the "%" icon shape stays.
+
 ## 1.1.0 – 2026-10-31
 
 ### Added

@@ -27,7 +27,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
   - **no setting** for this ("nikdo to nebude řešit").
   - Earlier, "user action only" was chosen and then reversed by the owner; this is final.
 - **Never circumvent ČSFD's Anubis bot protection.** No PoW, no spoofing, no hidden tabs. Polite client: cache, ≤2 concurrent, 400 ms spacing, queue cap, backoff on Anubis/429/503.
-- **Name** kept with "ČSFD" first; the **icon was recoloured blue** so it does not look like the ČSFD logo.
+- **Name** kept with "ČSFD" first. **Colour (owner, 2026-11-01): exactly ČSFD red** `#ba0305` for the icon (gradient to `#7d0204`) and the UI accent (dark-mode heading `#f07a7c`). It replaces the v1.1.0 blue; the owner knowingly accepted the store/trademark risk (name + colour + rating context can look official). Mitigation: the "%" icon shape is unlike the ČSFD logo, and "unofficial" stays in all texts. Do not revert to blue without asking. Rating colours in badges are unchanged.
 - **Firefox** declares `data_collection_permissions.required: ["websiteContent"]`, because film ids from visited pages go to csfd.cz. Honest disclosure.
 - **`@types/node` stays on Node 22** (`.nvmrc`). Dependabot ignores its majors; CI fails on a mismatch.
 - **VOD sites** (owner, 2026-10-31):
