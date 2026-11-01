@@ -35,6 +35,7 @@ export const MESSAGE_KEYS = [
   'welcomeHowLinks',
   'welcomeHowAuto',
   'welcomeHowHover',
+  'welcomeHowVod',
   'welcomeColorsTitle',
   'welcomeColorGood',
   'welcomeColorAverage',

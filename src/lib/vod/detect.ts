@@ -25,10 +25,17 @@ export interface VodSite {
   brand: string;
   /** Pathname of a detail page; any other page (news, people, episodes, lists) is ignored. */
   detailPath?: RegExp;
+  /** Path patterns the script is injected on (default `/*`): skips other regions of a global host. */
+  paths?: readonly string[];
   /** Detail-view container; when set and absent, no title is shown. */
   root?: string;
   /** Element carrying the on-page title (text, or `alt` of an image). */
   title?: string;
+  /**
+   * Element carrying the original title, used as the second title instead of the document title
+   * (which is marketing text on such sites). A leading "Label:" is removed.
+   */
+  altTitle?: string;
   /** Element carrying the release year. */
   year?: string;
   /** Metadata row (year, duration, season count). Default: the year element's parent. */
@@ -80,6 +87,38 @@ export const VOD_SITES: readonly VodSite[] = [
   { host: 'oneplay.cz', brand: 'Oneplay', detailPath: /^\/porad\/\d+-[^/]+\/?$/ },
   { host: 'ceskatelevize.cz', brand: 'Česká televize', detailPath: /^\/porady\/\d+-[^/]+\/?$/ },
   { host: 'iprima.cz', brand: 'prima+', detailPath: /^\/(?:filmy|serialy)\/[^/]+\/?$/ },
+  // Generic detection; pages captured logged out on 2026-11-01 (tools/capture-vod-page.mjs).
+  // Detail pages redirect to /titul/; episodes live under /serialy/<id>/epizoda/.
+  {
+    host: 'voyo.markiza.sk',
+    brand: 'Voyo',
+    detailPath: /^\/(?:titul|filmy|serialy|relacie)\/\d+-[^/]+\/?$/,
+  },
+  // A global host: only the Czech and Slovak catalogues are injected and detected.
+  {
+    host: 'canalplus.com',
+    brand: 'CANAL+',
+    paths: ['/cz/*', '/sk/*'],
+    detailPath: /^\/(?:cz|sk)\/[a-z]{2}\/(?:filmy|serialy)\/[^/]+\/h\/[^/]+\/?$/,
+  },
+  // The detail is a modal over the catalogue (`/cz?content_id=…`): no path to filter on.
+  { host: 'rakuten.tv', brand: 'Rakuten TV' },
+  { host: 'mubi.com', brand: 'MUBI', detailPath: /^\/[a-z]{2}(?:\/[a-z]{2})?\/films\/[^/]+\/?$/ },
+  { host: 'kviff.tv', brand: 'KVIFF.TV', detailPath: /^\/videos\/[^/]+\/?$/ },
+  // An aggregator, not a VOD (owner, 2026-11-01). Its document title is marketing text and its
+  // page has "Sledování titulu …" headings, so it needs hints.
+  {
+    host: 'justwatch.com',
+    brand: 'JustWatch',
+    paths: ['/cz/*', '/sk/*'],
+    detailPath: /^\/(?:cz|sk)\/(?:film|serial)\/[^/]+\/?$/,
+    root: '.title-detail-hero',
+    title: 'h1.title-detail-hero__details__title',
+    altTitle: '.original-title',
+    year: '.release-year',
+    meta: '.title-detail-hero__details',
+    anchor: '.release-year',
+  },
 ];
 
 export function findSite(hostname: string): VodSite | null {
@@ -130,8 +169,9 @@ const END = '(?![\\p{L}\\p{N}])';
 // Counts have 1–3 digits and must not start inside a longer number (linear on long digit runs).
 const COUNT = '(?<!\\d)\\d{1,3}\\s*';
 const YEAR = '((?:19|20)\\d{2})';
-const DURATION = `${COUNT}(?:h|hod|hodin[ay]?|min|m)${END}`;
-const SEASONS = `${COUNT}(?:řad[ay]?|séri[eí]|sezón[ay]?|seasons?|část[ií]?|dílů|episodes?)${END}`;
+// Also "48 - 53m" (episode lengths, Voyo) and "2h52" (Canal+).
+const DURATION = `${COUNT}(?:[-–]\\s*\\d{1,3}\\s*)?(?:h\\d{1,2}(?:min|m)?|h|hod|hodin[ay]?|min|minut[ay]?|minutes?|m)${END}`;
+const SEASONS = `${COUNT}(?:řad[ay]?|séri[aeií]|sezón[ay]?|seasons?|část[ií]?|dílů|episodes?)${END}`;
 const YEAR_BEFORE = new RegExp(`(?<!\\d)${YEAR}\\s*[•·|,]?\\s*(?:${DURATION}|${SEASONS})`, 'iu');
 const YEAR_AFTER = new RegExp(
   `${DURATION}(?:\\s*\\d{1,2}\\s*m${END})?\\s*[•·|,]?\\s*${YEAR}(?!\\d)`,
@@ -173,10 +213,11 @@ function detectHinted(doc: Document, url: URL, site: VodSite, root: Element): De
   }
   const yearEl = site.year ? root.querySelector(site.year) : null;
   const text = metadataText(root, site, yearEl);
+  const second = site.altTitle ? labelledText(root.querySelector(site.altTitle)) : docTitle;
   return {
     titles:
-      docTitle && normalizeTitle(docTitle) !== normalizeTitle(pageTitle)
-        ? [pageTitle, docTitle]
+      second && normalizeTitle(second) !== normalizeTitle(pageTitle)
+        ? [pageTitle, second]
         : [pageTitle],
     year: site.year ? yearIn(yearEl) : yearFromText(text),
     kind:
@@ -184,6 +225,11 @@ function detectHinted(doc: Document, url: URL, site: VodSite, root: Element): De
     anchor: (site.anchor && root.querySelector(site.anchor)) || titleEl,
     yearExpected: Boolean(site.year ?? site.meta),
   };
+}
+
+/** "Původní název: The Office" → "The Office". */
+function labelledText(el: Element | null): string | null {
+  return el && elementText(el).replace(/^[^:]{1,30}:\s*/, '');
 }
 
 /**
@@ -207,8 +253,10 @@ function detectGeneric(
   site: VodSite,
   root: Element,
 ): DetectedTitle | null {
-  const docTitle = cleanDocumentTitle(doc.title, site.brand);
-  const docKey = docTitle ? normalizeTitle(docTitle.replace(ANY_YEAR_IN_PARENS, ' ')) : '';
+  const docKey = documentKey(doc, site);
+  if (!docKey) {
+    return null; // a brand-only title (catalogue, home): nothing can match, skip the DOM scan
+  }
   const ld = jsonLdTitle(doc);
   if (ld === 'part') {
     return null; // an episode or season page
@@ -236,6 +284,12 @@ function detectGeneric(
     anchor: titleEl,
     yearExpected: false,
   };
+}
+
+/** The normalised document title without "(2024)"; empty when only the brand is left. */
+function documentKey(doc: Document, site: VodSite): string {
+  const docTitle = cleanDocumentTitle(doc.title, site.brand);
+  return docTitle ? normalizeTitle(docTitle.replace(ANY_YEAR_IN_PARENS, ' ')) : '';
 }
 
 /**

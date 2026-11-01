@@ -154,6 +154,28 @@ describe('startVodApp', () => {
     });
   });
 
+  it('stays out of the way when the page itself links the title on ČSFD', () => {
+    const voyo = findSite('voyo.markiza.sk');
+    loadVodPage('voyo-sk-film');
+    const deps = voyo && {
+      site: voyo,
+      hostname: 'voyo.markiza.sk',
+      url: () => 'https://voyo.markiza.sk/titul/7572-tiche-miesto',
+    };
+    // Voyo shows its own ČSFD link; the main content script badges it.
+    start({}, deps ?? {});
+    expect(badge()).toBeNull();
+    expect(findTitle).not.toHaveBeenCalled();
+    // A title without such a link is looked up as usual; other ČSFD links (search) don't count.
+    for (const link of document.querySelectorAll('a[href*="csfd."]')) {
+      link.setAttribute('href', 'https://www.csfd.sk/hledat/?q=tiche+miesto');
+    }
+    mutate();
+    mutate();
+    expect(badge()).not.toBeNull();
+    expect(findTitle).toHaveBeenCalledWith({ titles: ['Tiché miesto'], year: 2018, kind: 'film' });
+  });
+
   it('waits for the user to interact with the page before asking ČSFD', () => {
     active = false;
     start();

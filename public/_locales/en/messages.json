@@ -126,6 +126,9 @@
   "welcomeHowHover": {
     "message": "For other films, hover the link for a moment."
   },
+  "welcomeHowVod": {
+    "message": "On streaming sites (Netflix, HBO Max, Disney+, Oneplay, Voyo, iVysílání and more), open a film or series and click anywhere on the page: its rating appears next to the title."
+  },
   "welcomeColorsTitle": {
     "message": "What the colours mean"
   },

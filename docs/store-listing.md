@@ -34,6 +34,7 @@ Na fórech, v diskuzích a na blozích bývají odkazy na ČSFD často jen jako 
 • U odkazu ukáže hodnocení filmu v % v barvách ČSFD a po najetí myší i název a počet hodnocení.
 • Prvních 10 filmů na stránce se načte hned, ostatní po najetí myší.
 • Zobrazení si vyberete: malý odznak u odkazu, nebo jen plovoucí karta (nic se nevkládá do stránky).
+• Na streamovacích službách ukáže hodnocení u otevřeného detailu filmu nebo seriálu: Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo, Canal+, Rakuten TV, MUBI, KVIFF.TV a JustWatch. Když si není jistý, ukáže „ČSFD ?“ s odkazem na hledání.
 • Na libovolném webu jde vypnout jedním kliknutím.
 • Česky, slovensky a anglicky.
 
@@ -58,6 +59,7 @@ Na fórach, v diskusiách a na blogoch bývajú odkazy na ČSFD často len ako t
 • Pri odkaze ukáže hodnotenie filmu v % vo farbách ČSFD a po prejdení myšou aj názov a počet hodnotení.
 • Prvých 10 filmov na stránke sa načíta hneď, ostatné po prejdení myšou.
 • Zobrazenie si vyberiete: malý odznak pri odkaze, alebo len plávajúca karta (nič sa nevkladá do stránky).
+• Na streamovacích službách ukáže hodnotenie pri otvorenom detaile filmu alebo seriálu: Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo, Canal+, Rakuten TV, MUBI, KVIFF.TV a JustWatch. Keď si nie je istý, ukáže „ČSFD ?“ s odkazom na vyhľadávanie.
 • Na ľubovoľnom webe sa dá vypnúť jedným kliknutím.
 
 Šetrné k ČSFD aj k vášmu prehliadaču: každý film sa stiahne len raz, hodnotenia sa ukladajú do vyrovnávacej pamäte a počet požiadaviek je obmedzený.
@@ -79,6 +81,7 @@ Forums and blogs often mention ČSFD films as plain-text URLs, so you can't see 
 • Shows the film's ČSFD rating in % in ČSFD's colours, with the title and number of ratings on hover.
 • The first 10 films on a page load right away; others when you hover.
 • Choose how it looks: a small badge next to the link, or a hover card only (nothing is inserted into the page).
+• On streaming sites it shows the rating of the open film or series: Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo, Canal+, Rakuten TV, MUBI, KVIFF.TV and JustWatch. When unsure, it shows "ČSFD ?" linking to the search.
 • Turn it off for any site with one click.
 • Czech, Slovak and English.
 
@@ -93,7 +96,7 @@ Unofficial; not affiliated with ČSFD.
 
 - **Single purpose:** Show ČSFD film ratings next to links to ČSFD on web pages and next to the open title on streaming sites.
 - **Permission justification:**
-  - Content script on all sites: links to ČSFD can appear on any website. The script reads page text locally to find them. On Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání (Česká televize) and Prima+ it also reads the title, year and type of the detail the user opens.
+  - Content script on all sites: links to ČSFD can appear on any website. The script reads page text locally to find them. On Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání (Česká televize), Prima+, Voyo (Slovakia), Canal+, Rakuten TV, MUBI, KVIFF.TV and JustWatch it also reads the title, year and type of the detail the user opens.
   - `https://www.csfd.cz/*`: download the public film page to read its rating. This happens for the first 10 distinct films visible on a page; others load after the user hovers or keyboard-focuses the link. On streaming sites, search ČSFD for the title whose detail the user opened (at most 2 searches + the film page).
   - `storage`: rating cache and settings.
   - `activeTab`: the per-site on/off switch and link count in the popup.

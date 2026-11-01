@@ -126,6 +126,9 @@
   "welcomeHowHover": {
     "message": "Pri ďalších filmoch stačí na odkaz chvíľu prejsť myšou."
   },
+  "welcomeHowVod": {
+    "message": "Na streamovacích službách (Netflix, HBO Max, Disney+, Oneplay, Voyo, iVysílání a ďalšie) otvorte detail filmu alebo seriálu a kliknite kamkoľvek na stránku: hodnotenie sa zobrazí pri názve."
+  },
   "welcomeColorsTitle": {
     "message": "Čo znamenajú farby"
   },

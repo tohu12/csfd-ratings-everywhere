@@ -132,6 +132,29 @@ describe('detectTitle on real pages', () => {
     });
   });
 
+  it('JustWatch film: heading without its "(2023)", year from the year element', () => {
+    const found = detect('justwatch-film', 'https://www.justwatch.com/cz/film/oppenheimer');
+    expect(found).toMatchObject({ titles: ['Oppenheimer'], year: 2023, kind: 'film' });
+    expect(found?.anchor?.className).toBe('release-year');
+  });
+
+  it('JustWatch series: the original title instead of the marketing document title', () => {
+    const found = detect('justwatch-series', 'https://www.justwatch.com/cz/serial/the-office');
+    expect(found).toMatchObject({ titles: ['Kancl', 'The Office'], year: 2001, kind: 'series' });
+  });
+
+  it('JustWatch: an original title equal to the heading is not repeated', () => {
+    const justwatch = findSite('www.justwatch.com');
+    const doc = parse(
+      '<title>Duna – kde sledovat</title><div class="title-detail-hero">' +
+        '<h1 class="title-detail-hero__details__title">Duna<span class="release-year"> (2021)</span></h1>' +
+        '<h3 class="original-title">Pôvodný názov: DUNA</h3></div>',
+    );
+    const found =
+      justwatch && detectTitle(doc, new URL('https://www.justwatch.com/sk/film/duna'), justwatch);
+    expect(found).toMatchObject({ titles: ['Duna'], year: 2021, kind: 'film' });
+  });
+
   it('Apple TV film: generic detection, year next to the duration (not the award year)', () => {
     const found = detect(
       'appletv-film',
@@ -230,6 +253,21 @@ describe('detectTitle generic heuristics', () => {
       year: 2021,
       kind: 'film',
     });
+  });
+
+  it('reads durations in minutes spelled out, as "2h52" and as a range of episode lengths', () => {
+    expect(run('<h1>Duna</h1><p>2021 · 155 minut</p>')).toMatchObject({ year: 2021, kind: 'film' });
+    expect(run('<h1>Duna</h1><p>Drama 155 minutes 2021</p>')).toMatchObject({
+      year: 2021,
+      kind: 'film',
+    });
+    expect(run('<h1>Duna</h1><p>Drama 2h52 2021</p>')).toMatchObject({ year: 2021, kind: 'film' });
+    expect(run('<h1>Duna</h1><p>Drama 2h52m 2021</p>')).toMatchObject({ year: 2021 });
+    expect(run('<h1>Duna</h1><p>krimi 2026 48 - 53m</p>')).toMatchObject({ year: 2026 });
+  });
+
+  it('reads the Slovak "séria" as a season count', () => {
+    expect(run('<h1>Duna</h1><p>2024 · 1 séria</p>')).toMatchObject({ year: 2024, kind: 'series' });
   });
 
   it('ignores a lone year that is not next to a duration', () => {
@@ -359,6 +397,41 @@ describe('detectTitle on public pages of generically detected sites', () => {
       'https://www.iprima.cz/filmy/prava-blondynka',
       ['Pravá blondýnka'],
       2001,
+      'film',
+    ],
+    ['mubi-film', 'https://mubi.com/en/cz/films/perfect-days', ['PERFECT DAYS'], 2023, 'film'],
+    [
+      'voyo-sk-film',
+      'https://voyo.markiza.sk/titul/7572-tiche-miesto',
+      ['Tiché miesto'],
+      2018,
+      'film',
+    ],
+    // "2026 48 - 53m": the year sits next to a range of episode lengths.
+    ['voyo-sk-series', 'https://voyo.markiza.sk/titul/9630-hriech', ['Hriech'], 2026, 'series'],
+    // The year ("Norsko, 2024") is not next to the duration: the lookup goes by kind only.
+    ['kviff-film', 'https://kviff.tv/videos/az-na-veky', ['Až na věky'], null, 'film'],
+    // "2h52 2023": hours and minutes without a space or unit.
+    [
+      'canalplus-film',
+      'https://www.canalplus.com/cz/cs/filmy/oppenheimer/h/42620108_55021',
+      ['Oppenheimer'],
+      2023,
+      'film',
+    ],
+    [
+      'canalplus-series',
+      'https://www.canalplus.com/cz/cs/serialy/moloch/h/42010557_55021',
+      ['Moloch'],
+      null,
+      'series',
+    ],
+    // The detail is a modal over the catalogue, addressed by query parameters.
+    [
+      'rakuten-film',
+      'https://www.rakuten.tv/cz?content_type=movies&content_id=oppenheimer',
+      ['Oppenheimer'],
+      2023,
       'film',
     ],
   ] as const)('%s', (name, url, titles, year, kind) => {
@@ -593,8 +666,28 @@ describe('detectTitle never takes another title for the open one (review regress
     ['Prime Video', 'https://www.primevideo.com/search/ref=atv_sr_sug?phrase=duna'],
     ['SkyShowtime', 'https://www.skyshowtime.com/cz'],
     ['Apple TV', 'https://tv.apple.com/cz/room/duna'],
+    ['MUBI', 'https://mubi.com/en/cz/films/duna/trailer'],
+    ['MUBI', 'https://mubi.com/en/cz/showing'],
+    ['Voyo', 'https://voyo.markiza.sk/serialy/9630-hriech/epizoda/1-kolchoz'],
+    ['Voyo', 'https://voyo.markiza.sk/filmy/zanre/166-thriller'],
+    ['KVIFF.TV', 'https://kviff.tv/screens/filmy'],
+    ['CANAL+', 'https://www.canalplus.com/cz/cs/filmy/'],
+    ['CANAL+', 'https://www.canalplus.com/fr/cinema/duna/h/1_2'],
+    ['JustWatch', 'https://www.justwatch.com/cz/serial/duna/rada-2'],
+    ['JustWatch', 'https://www.justwatch.com/cz/novinky'],
   ])('ignores non-detail paths on %s: %s', (brand, url) => {
     expect(run(brand, url, 'Duna', '<h1>Duna</h1><p>2021 · 2 h 35 m</p>')).toBeNull();
+  });
+
+  it('ignores the Rakuten TV catalogue behind a closed detail (brand-only document title)', () => {
+    expect(
+      run(
+        'Rakuten TV',
+        'https://www.rakuten.tv/cz',
+        'Rakuten TV',
+        '<h2>Rakuten TV</h2><p>2021 · 2 h 35 m</p>',
+      ),
+    ).toBeNull();
   });
 
   it('stops looking for year and kind at a container with another heading', () => {

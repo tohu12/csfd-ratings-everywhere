@@ -1,6 +1,6 @@
 import { type Badge, type BadgeOptions, createBadge } from './badge';
 import { lookupKey, searchUrl, type TitleQuery } from './csfd-search';
-import { ratingUrl } from './csfd-url';
+import { parseCsfdUrl, ratingUrl } from './csfd-url';
 import type { Translate } from './i18n';
 import { isTitleResult, type TitleResult } from './messages';
 import { BLOCKED, ERROR } from './rating';
@@ -145,7 +145,9 @@ export function startVodApp(deps: VodDeps): VodApp {
     if (stopped) {
       return;
     }
-    const detected = detectTitle(doc, new URL(deps.url()), deps.site);
+    // Prima+, Oneplay and Voyo link the open title on ČSFD themselves: the main content script
+    // badges that link, so a search would only cost a request and add a second badge.
+    const detected = linksToCsfd(doc) ? null : detectTitle(doc, new URL(deps.url()), deps.site);
     if (detected) {
       show(detected);
     } else {
@@ -175,6 +177,13 @@ export function startVodApp(deps: VodDeps): VodApp {
       current = null;
     },
   };
+}
+
+/** A ČSFD film link in the page (badges live in shadow roots, so they never count). */
+function linksToCsfd(doc: Document): boolean {
+  return [...doc.querySelectorAll<HTMLAnchorElement>('a[href*="csfd." i]')].some(
+    (a) => parseCsfdUrl(a.href) !== null,
+  );
 }
 
 function render(badge: Badge, answer: TitleResult): void {

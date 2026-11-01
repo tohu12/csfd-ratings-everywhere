@@ -168,6 +168,14 @@ describe('vod content entrypoint', () => {
       'https://*.oneplay.cz/*',
       'https://*.ceskatelevize.cz/*',
       'https://*.iprima.cz/*',
+      'https://*.voyo.markiza.sk/*',
+      'https://*.canalplus.com/cz/*',
+      'https://*.canalplus.com/sk/*',
+      'https://*.rakuten.tv/*',
+      'https://*.mubi.com/*',
+      'https://*.kviff.tv/*',
+      'https://*.justwatch.com/cz/*',
+      'https://*.justwatch.com/sk/*',
     ]);
   });
 
