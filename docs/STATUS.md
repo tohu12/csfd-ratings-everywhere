@@ -1,6 +1,6 @@
 # Project status
 
-Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-11-01 (v1.1.0; VOD on `main`).
+Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-11-01 (v1.1.0; VOD on `main`, 15 services, red UI).
 
 ## In one paragraph
 "ČSFD hodnocení všude / ČSFD Ratings Everywhere" is a WXT MV3 browser extension (Chrome, Edge, Firefox).
@@ -12,13 +12,13 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 ## State
 | Area | State |
 |---|---|
-| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** detail views on Netflix, Disney+, HBO Max (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+ (generic detector) → ČSFD search → rating. Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. Test counts and bundle sizes: run `pnpm check` and `pnpm size`. |
-| VOD real-world check | **Not done yet.** Detection verified on DOM captured 2026-10-31 from the owner's logged-in sessions (`tests/fixtures/pages/vod/`). The search parser is tested only on a **synthetic** ČSFD search page. Unknown: whether `/hledat/` requests pass Anubis like `/film/` ones. |
+| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** detail views on Netflix, Disney+, HBO Max, JustWatch (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo SK, Canal+, Rakuten TV, MUBI, KVIFF.TV (generic detector) → ČSFD search → rating. Icon and UI accent are ČSFD red since 2026-11-01. Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. Test counts and bundle sizes: run `pnpm check` and `pnpm size`. |
+| VOD real-world check | **Not done yet.** Detection verified on DOM captured 2026-10-31 from the owner's logged-in sessions (Netflix, Disney+, HBO Max) and on public logged-out pages for the rest (2026-10-31 and 2026-11-01, `tests/fixtures/pages/vod/`). The search parser is tested on **real** ČSFD search pages (`search-silo.html`, `search-duna.html`, saved by the owner 2026-11-01); the real result links end in `/prehled/`, which the synthetic page lacked. Unknown: whether `/hledat/` requests pass Anubis like `/film/` ones. |
 | Real-world check | 2026-10-31, headed Chrome with the owner on 8 warcenter.cz topics: **8/8 correct**, incl. series-episode URLs and unrated films. Extension requests to csfd.cz **pass Anubis**. |
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
 | Website | GitHub Pages from `/docs`: https://tohu12.github.io/csfd-ratings-everywhere/ (landing page + `PRIVACY.html`). |
 | Release pipeline | Tag `v*` → `release.yml` builds Chrome/Edge/Firefox zips (+ Firefox sources zip) into a **draft** GitHub Release. Store upload is manual for now. |
-| Store packages | Use the **v1.1.0** release zips (v1.0.0 predates the UI colour change and the welcome page). |
+| Store packages | Use the **v1.2.0** release zips once released (red icon, VOD). v1.1.0 and older have the blue icon. **Re-run the Store assets workflow** before submitting: the images in `docs/store/` (2026-10-31) still show the blue UI. |
 
 ## Decisions (and why). Don't revert without asking the owner
 - **Fetching** (SPEC §4):
@@ -40,11 +40,12 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 
 ## Open items (owner decides / acts)
 0. **VOD before release:**
-   - the owner saves real ČSFD search pages (`/hledat/?q=silo`, `?q=duna`) into `tests/fixtures/csfd/` and the parser is checked against them,
+   - ~~the owner saves real ČSFD search pages~~ done 2026-11-01; the parser needed a fix for `/prehled/` links. Known limit: ČSFD has two films "Duna (2021)", so Villeneuve's Duna shows „ČSFD ?“ (never guess). If the owner wants a tie-breaker (e.g. ČSFD's result order or rating count), that is a SPEC change.
    - real-world check together in headed Chrome: ~8 titles per service (films, series, Czech titles, duplicate names); record the hit rate and whether `/hledat/` passes Anubis,
-   - then mention VOD on the welcome page and in the store texts (privacy texts are already updated), and release v1.2.0.
-   - Sites added 2026-10-31 on the owner's request ("everywhere" = all common VOD services, still a curated list): Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+. The owner has no subscriptions there, so they were analysed on **public, logged-out** detail pages only; logged-in layouts may differ and need the real-world check. filmtoro.cz is not in the list: its detail pages link ČSFD directly, so the main script already badges them. Another site = one `VOD_SITES` entry + a captured fixture.
-   - Reviewer follow-ups that need the real search page: restrict `parseSearchPage` to the film/series result sections; consider memoising search candidates per URL in the background.
+   - VOD is mentioned on the welcome page, in the store texts and the privacy texts (done 2026-11-01). Release v1.2.0 once the search parser passes the real pages (owner's decision 2026-11-01: the joint browser check is optional).
+   - Sites added 2026-11-01 (owner: "as many as are used in CZ", no accounts there): Voyo SK, Canal+ (CZ/SK paths only), Rakuten TV, MUBI, KVIFF.TV, and **JustWatch** (an aggregator, added on the owner's explicit decision). Services surveyed and rejected, with reasons: [VOD fixture README](../tests/fixtures/pages/vod/README.md#services-considered-and-not-added-2026-11-01).
+   - Sites added 2026-10-31 on the owner's request ("everywhere" = all common VOD services, still a curated list): Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+. The owner has no subscriptions there, so they were analysed on **public, logged-out** detail pages only; logged-in layouts may differ and need the real-world check. filmtoro.cz is not in the list: its detail pages link ČSFD directly, so the main script already badges them. Another site = `/add-vod-site` (one `VOD_SITES` entry + a fixture captured with `tools/capture-vod-page.mjs`).
+   - Reviewer follow-ups: creators/users results have no `film-title-name` link and are already skipped (checked on the real pages); memoising search candidates per URL in the background is still open.
    - The 30-lookups-per-page-load cap also applies to long SPA sessions (Netflix never reloads). If the owner hits it in practice, revisit (e.g. a per-hour budget in the background instead).
 1. Create store developer accounts and submit (CWS one-time fee, Edge Partner Center, AMO). Follow [launch-plan.md](launch-plan.md).
 2. **Rating link in the popup:** add it once the store listing URLs exist (it needs per-store URLs). The owner wants only genuinely useful features. Onboarding is done (v1.1.0). The **uninstall survey was rejected** by the owner: don't add it.
@@ -65,7 +66,9 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 - **Playwright grants user activation by itself** shortly after load (and `page.evaluate` runs with a user gesture), so the §4b activation gate cannot be E2E-tested; unit tests and the manual check cover it.
 - **Run E2E only via `pnpm test:e2e`.** It builds first; running `playwright test` directly tests a stale `.output/` build.
 - **Invisible characters in source:** file edits by agents have turned `⁨`-style escapes into the literal invisible characters. Match them with Unicode classes (`\p{Cf}`, `\p{M}`) in source and build them with `String.fromCodePoint` in tests.
+- **VOD content script is close to its budget** (6.91 of 7 kB gzip on 2026-11-01: about 90 B left). Each site entry costs bytes; raise the size-limit budget consciously, not silently.
+- **Some sites refuse headless Chromium** (MUBI, JustWatch, Canal+: 403/503). Capture them with `--headed`; that is a normal browser, not a bypass.
 - **Trying it locally:** `pnpm build`, then *Load unpacked* `.output/chrome-mv3` (README). On VOD sites the rating loads only after the first click or key press on the page (user-activation gate).
 
 ## Where things are
-`src/lib/` holds the logic (DI, pure). `src/entrypoints/` is thin wiring. `tests/unit` + `tests/e2e` + `tests/bench`. The Claude Code harness is in `.claude/` (hooks, path rules, reviewer subagents, skills `/add-url-pattern`, `/verify-in-browser`, `/release`). Tools: `tools/render-icons.mjs`, `tools/store-assets.mjs`, `tools/biome/no-html-sinks.grit`.
+`src/lib/` holds the logic (DI, pure). `src/entrypoints/` is thin wiring. `tests/unit` + `tests/e2e` + `tests/bench`. The Claude Code harness is in `.claude/` (hooks, path rules, reviewer subagents, skills `/add-url-pattern`, `/add-vod-site`, `/verify-in-browser`, `/release`). Tools: `tools/render-icons.mjs`, `tools/store-assets.mjs`, `tools/capture-vod-page.mjs`, `tools/biome/no-html-sinks.grit`.
