@@ -23,9 +23,9 @@ Internal working document (not published on the website). Sources: Chrome Web St
 - [x] Graphics: icon 128 (96 + 16 px padding), 5 screenshots 1280×800, promo 440×280, marquee 1400×560
 - [x] Website, support, privacy URLs (GitHub Pages)
 - [x] Honest privacy disclosure (Firefox `websiteContent`)
-- [ ] Run **Store assets** workflow → use the localized `-cs` screenshots for the Czech listing
+- [x] Run **Store assets** workflow (2026-11-01, red UI) → use the localized `-cs` screenshots for the Czech listing
 - [x] Onboarding page on install (v1.1.0)
-- [ ] Optional but recommended: write to ČSFD (draft below)
+- [ ] Optional but recommended: write to ČSFD (draft below, mentions the VOD search since 2026-11-01)
 
 ### Submission day
 - [ ] CWS: developer account (one-time fee), verified contact e-mail, publisher name; upload `*-chrome.zip`, fill listing + Privacy practices
@@ -61,6 +61,8 @@ Post only where self-promotion is allowed, read each community's rules first, an
 > Dobrý den,
 >
 > vytvořil jsem open-source rozšíření pro Chrome, Edge a Firefox „ČSFD hodnocení všude“. Na webech, kde jsou odkazy na ČSFD jen jako text (fóra, diskuze), z nich udělá odkazy a ukáže u nich hodnocení filmu. Uživatelé se tak dostanou na ČSFD jedním klikem.
+>
+> Na vybraných streamovacích službách (Netflix, Disney+, HBO Max, iVysílání ČT a další) navíc ukáže hodnocení u filmu nebo seriálu, jehož detail si uživatel otevře. Název dohledá přes vyhledávání ČSFD: nejvýš 2 hledání a jedna stránka filmu, až když uživatel se stránkou pracuje, nikdy u náhledů v nabídce. Když si shodou není jistý, ukáže jen odkaz na vyhledávání na ČSFD.
 >
 > Chci, aby rozšíření bylo k ČSFD šetrné:
 > - každý film se stáhne nejvýš jednou za týden (cache),

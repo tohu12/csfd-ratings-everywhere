@@ -1,6 +1,6 @@
 # Project status
 
-Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-11-01 (v1.2.0 tagged: VOD on 15 services, red UI; draft GitHub Release, not in stores yet).
+Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-11-01 (v1.2.0 tagged: VOD on 15 services, red UI; store images regenerated; draft GitHub Release, not in stores yet).
 
 ## In one paragraph
 "ČSFD hodnocení všude / ČSFD Ratings Everywhere" is a WXT MV3 browser extension (Chrome, Edge, Firefox).
@@ -18,7 +18,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
 | Website | GitHub Pages from `/docs`: https://tohu12.github.io/csfd-ratings-everywhere/ (landing page + `PRIVACY.html`). |
 | Release pipeline | Tag `v*` → `release.yml` builds Chrome/Edge/Firefox zips (+ Firefox sources zip) into a **draft** GitHub Release. Store upload is manual for now. |
-| Store packages | Use the **v1.2.0** release zips once released (red icon, VOD). v1.1.0 and older have the blue icon. **Re-run the Store assets workflow** before submitting: the images in `docs/store/` (2026-10-31) still show the blue UI. |
+| Store packages | Use the **v1.2.0** release zips once released (red icon, VOD). v1.1.0 and older have the blue icon. The images in `docs/store/` were regenerated 2026-11-01 with the red UI. |
 
 ## Decisions (and why). Don't revert without asking the owner
 - **Fetching** (SPEC §4):
