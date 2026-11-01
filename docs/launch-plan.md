@@ -25,7 +25,8 @@ Internal working document (not published on the website). Sources: Chrome Web St
 - [x] Honest privacy disclosure (Firefox `websiteContent`)
 - [x] Run **Store assets** workflow (2026-11-01, red UI) → use the localized `-cs` screenshots for the Czech listing
 - [x] Onboarding page on install (v1.1.0)
-- [ ] Optional but recommended: write to ČSFD (draft below, mentions the VOD search since 2026-11-01)
+- [ ] Write to ČSFD and wait for the answer (draft below, mentions the VOD search since 2026-11-01). Required since 2026-11-01: consent removes most legal risks ([legal-notes.md](legal-notes.md))
+- [ ] Owner reads the ČSFD terms of use and records the relevant clauses in [legal-notes.md](legal-notes.md)
 
 ### Submission day
 - [ ] CWS: developer account (one-time fee), verified contact e-mail, publisher name; upload `*-chrome.zip`, fill listing + Privacy practices
