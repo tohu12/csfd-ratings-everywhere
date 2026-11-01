@@ -16,6 +16,7 @@ The harness lives in `.claude/` and is committed:
   - `test-writer`: writes tests, the only one that edits; edits tests only.
 - **Skills** (`.claude/skills/`):
   - `/add-url-pattern`: support a new ČSFD URL shape,
+  - `/add-vod-site`: add a streaming service (captured fixture, tests, docs),
   - `/verify-in-browser`: build + E2E + manual checklist,
   - `/release`: version bump → tag → store zips.
 
