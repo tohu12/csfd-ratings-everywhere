@@ -1,6 +1,6 @@
 # Project status
 
-Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-10-31 (v1.1.0).
+Handover note for agents and humans. **Keep it current.** Update it in the same change whenever status, a decision or an open item changes. Last updated: 2026-11-01 (v1.1.0; VOD on `main`).
 
 ## In one paragraph
 "ČSFD hodnocení všude / ČSFD Ratings Everywhere" is a WXT MV3 browser extension (Chrome, Edge, Firefox).
@@ -12,7 +12,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 ## State
 | Area | State |
 |---|---|
-| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** detail views on Netflix, Disney+, HBO Max (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+ (generic detector) → ČSFD search → rating. 474 unit tests at 100 % coverage, 13 Playwright E2E, size budgets (VOD script 6.4 / 7 kB). Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. |
+| Code | v1.1.0 released (welcome page, blue UI accent). **`main` adds VOD ratings (SPEC §4b), unreleased:** detail views on Netflix, Disney+, HBO Max (per-site hints) and Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+ (generic detector) → ČSFD search → rating. Reviewed by code-, perf- and security-reviewer; confirmed findings fixed. Test counts and bundle sizes: run `pnpm check` and `pnpm size`. |
 | VOD real-world check | **Not done yet.** Detection verified on DOM captured 2026-10-31 from the owner's logged-in sessions (`tests/fixtures/pages/vod/`). The search parser is tested only on a **synthetic** ČSFD search page. Unknown: whether `/hledat/` requests pass Anubis like `/film/` ones. |
 | Real-world check | 2026-10-31, headed Chrome with the owner on 8 warcenter.cz topics: **8/8 correct**, incl. series-episode URLs and unrated films. Extension requests to csfd.cz **pass Anubis**. |
 | Stores | **Not submitted yet.** Texts in [store-listing.md](store-listing.md), graphics in `docs/store/`, plan in [launch-plan.md](launch-plan.md). |
@@ -58,11 +58,14 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
 - **Localized store screenshots only render on Linux.** macOS Chrome ignores `--lang`. Use the **Store assets** workflow (Actions → Run workflow) and take its artifact.
 - `element.focus()` from page scripts fires a *trusted* focus event. Keyboard intent therefore requires a real key press within 1 s (SPEC §4). E2E covers this.
 - Agents may not run `wxt submit` (denied in `.claude/settings.json`).
-- **VOD selectors break when the services redesign.** They live in `VOD_SITES` (`src/lib/vod/detect.ts`) with fixtures captured 2026-10-31. To refresh: headed browser via Playwright MCP, the owner logs in, capture the detail container's `outerHTML` (strip images, svg paths, styles). Quirks seen:
+- **VOD selectors break when the services redesign.** They live in `VOD_SITES` (`src/lib/vod/detect.ts`) with fixtures captured 2026-10-31. How to recapture, trimming pitfalls and the quirks of the generic sites: [VOD fixture README](../tests/fixtures/pages/vod/README.md). Quirks of the hinted sites:
   - Netflix: the detail is a modal (`?jbv=<id>` or `/title/<id>`), the logo has an empty `alt`, the title is in `.about-header strong`, the year of a series is its latest season;
   - HBO Max: `document.title` is English and wrapped in bidi isolates, the Czech title is the hero image `alt`;
   - Apple TV: the `h1` is visually hidden, JSON-LD has no Movie, and "2026 Oscar® Winner" sits next to the real year.
 - **Playwright grants user activation by itself** shortly after load (and `page.evaluate` runs with a user gesture), so the §4b activation gate cannot be E2E-tested; unit tests and the manual check cover it.
+- **Run E2E only via `pnpm test:e2e`.** It builds first; running `playwright test` directly tests a stale `.output/` build.
+- **Invisible characters in source:** file edits by agents have turned `⁨`-style escapes into the literal invisible characters. Match them with Unicode classes (`\p{Cf}`, `\p{M}`) in source and build them with `String.fromCodePoint` in tests.
+- **Trying it locally:** `pnpm build`, then *Load unpacked* `.output/chrome-mv3` (README). On VOD sites the rating loads only after the first click or key press on the page (user-activation gate).
 
 ## Where things are
 `src/lib/` holds the logic (DI, pure). `src/entrypoints/` is thin wiring. `tests/unit` + `tests/e2e` + `tests/bench`. The Claude Code harness is in `.claude/` (hooks, path rules, reviewer subagents, skills `/add-url-pattern`, `/verify-in-browser`, `/release`). Tools: `tools/render-icons.mjs`, `tools/store-assets.mjs`, `tools/biome/no-html-sinks.grit`.
