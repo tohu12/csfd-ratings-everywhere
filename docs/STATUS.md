@@ -36,6 +36,7 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
   - an uncertain match shows **„ČSFD ?“** linking to the ČSFD search, never a possibly wrong %,
   - one **generic detector** (document title ↔ on-page title, year next to the duration) on a **curated list of VOD hosts**, not on every site; per-site hints only where generic detection fails,
   - the badge goes next to the title; when there is no visible spot, it floats in the corner.
+- **Contacting ČSFD is not required** (owner, 2026-11-01): the drafted e-mail stays optional and the owner does not plan to send it. Do not make it, or ČSFD consent, a release or store-submission gate.
 - **Shadow roots are `open`**, for testability and a11y. The content is public rating data.
 
 ## Open items (owner decides / acts)
@@ -47,9 +48,9 @@ Handover note for agents and humans. **Keep it current.** Update it in the same 
    - Sites added 2026-10-31 on the owner's request ("everywhere" = all common VOD services, still a curated list): Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+. The owner has no subscriptions there, so they were analysed on **public, logged-out** detail pages only; logged-in layouts may differ and need the real-world check. filmtoro.cz is not in the list: its detail pages link ČSFD directly, so the main script already badges them. Another site = `/add-vod-site` (one `VOD_SITES` entry + a fixture captured with `tools/capture-vod-page.mjs`).
    - Reviewer follow-ups: creators/users results have no `film-title-name` link and are already skipped (checked on the real pages); memoising search candidates per URL in the background is still open.
    - The 30-lookups-per-page-load cap also applies to long SPA sessions (Netflix never reloads). If the owner hits it in practice, revisit (e.g. a per-hour budget in the background instead).
-1. Create store developer accounts and submit (CWS one-time fee, Edge Partner Center, AMO), after item 3. Follow [launch-plan.md](launch-plan.md).
+1. Create store developer accounts and submit (CWS one-time fee, Edge Partner Center, AMO). Follow [launch-plan.md](launch-plan.md).
 2. **Rating link in the popup:** add it once the store listing URLs exist (it needs per-store URLs). The owner wants only genuinely useful features. Onboarding is done (v1.1.0). The **uninstall survey was rejected** by the owner: don't add it.
-3. **Before the store submission** (not optional since 2026-11-01): send the drafted e-mail to ČSFD asking for consent or an API, and the owner reads the ČSFD terms of use. Why: [legal-notes.md](legal-notes.md) (risk overview: trademark/confusion, database right, terms of use; no criminal exposure as long as Anubis is never circumvented).
+3. The drafted e-mail to ČSFD (consent or an API) is **optional, and the owner does not want to send it** (2026-11-01). Reading the ČSFD terms of use before the submission is recommended, not a gate. Why: [legal-notes.md](legal-notes.md) (risk overview: trademark/confusion, database right, terms of use; no criminal exposure as long as Anubis is never circumvented).
 4. Replace the synthetic film fixtures in `tests/fixtures/csfd/` with real pages saved from a browser ([fixture README](../tests/fixtures/csfd/README.md)).
 5. After the first manual store upload: automate submission from CI (credentials as GitHub secrets, gated environment).
 

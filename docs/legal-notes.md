@@ -51,10 +51,10 @@ Internal working document (not published on the website). A risk overview from 2
 
 ## What we do
 
-1. **Write to ČSFD before the store submission.** The draft is in [launch-plan.md](launch-plan.md#draft-e-mail-to-čsfd).
-   - Consent removes most of risks 1–3.
-   - A refusal is better known before there are users.
-2. The owner reads the ČSFD terms of use and records the relevant clauses here.
+1. Writing to ČSFD is **optional; the owner decided not to send the e-mail** (2026-11-01). The draft stays in [launch-plan.md](launch-plan.md#draft-e-mail-to-čsfd) in case that changes.
+   - Consent would remove most of risks 1–3.
+   - Without it, the safeguards are the polite request limits, "unofficial" in all texts and a quick, constructive answer to any complaint (points 3 and 4).
+2. Recommended: the owner reads the ČSFD terms of use and records the relevant clauses here.
 3. If a complaint arrives, the ČSFD red is the first thing to give up. It is the cheapest change with the biggest effect on confusion.
 4. Answer any letter quickly and constructively: offer changes or removal.
 5. Any monetisation (ads, a paid tier) needs a lawyer's review first, because it raises risks 1 and 2 considerably.
