@@ -29,10 +29,10 @@ Internal working document (not published on the website). Sources: Chrome Web St
 - [ ] Recommended: owner reads the ČSFD terms of use and records the relevant clauses in [legal-notes.md](legal-notes.md)
 
 ### Submission day
-- [ ] CWS: developer account (one-time fee), verified contact e-mail, publisher name; upload `*-chrome.zip`, fill listing + Privacy practices
+- [x] CWS: developer account (one-time fee), verified contact e-mail, publisher name; upload `*-chrome.zip`, fill listing + Privacy practices (v1.3.1, 2026-11-01)
 - [ ] Edge Partner Center: upload `*-edge.zip`, reuse texts/graphics
 - [ ] AMO: upload `*-firefox.zip` + `*-sources.zip`
-- [ ] Expect a longer CWS review because of the `<all_urls>` content script
+- [ ] Expect a longer CWS review because of the `<all_urls>` content script (the dashboard warned about it on submission)
 
 ### After approval
 - [ ] Replace "již brzy" links on the website and in README with store links
