@@ -6,6 +6,7 @@
 | `anubis-challenge.html`                                           | Synthetic, modelled on the Anubis v1.28 challenge page markup.                                                                               |
 | `film.html`, `episode.html`, `no-rating.html`, `markup-only.html` | **Synthetic**, modelled on ČSFD film page markup (JSON-LD `aggregateRating`, `.film-rating-average`, `h1`).                                  |
 | `search-silo.html`, `search-duna.html` | **Real** ČSFD search pages saved by the owner in a browser (2026-11-01, logged out). The users section, scripts and styles were removed (other people's nicknames; tracking). |
+| `search-empty.html` | **Real** ČSFD search without results (`?q=xqzjvw`), saved by the owner 2026-11-01. It links no film: the basis of the "empty search never alarms" rule (SPEC §6a). Users section, scripts and styles removed. |
 
 ČSFD blocks automated clients with Anubis, and this project never circumvents it, so real film pages cannot be downloaded by scripts or agents.
 

@@ -215,7 +215,8 @@ describe('createRatingService', () => {
 });
 
 const DUNA = { titles: ['Duna'], year: 2021, kind: 'film' } as const;
-const EMPTY_SEARCH = '<html><p>Nic nenalezeno</p></html>';
+/** A real ČSFD search without results (it links no film). */
+const EMPTY_SEARCH = fixture('csfd/search-empty.html');
 
 /** Serves the search fixture for `q=duna`, an empty result page for other queries, film pages otherwise. */
 function csfd(film = 'csfd/film.html', search = 'csfd/search.html'): FetchPage {

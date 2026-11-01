@@ -214,9 +214,8 @@ describe('searchPageState', () => {
       '<span class="info">(epizoda)</span></span></h3></article>';
     expect(parseSearchPage(episodeOnly)).toEqual([]);
     expect(searchPageState(episodeOnly)).toBe('results');
-    expect(searchPageState('<html><p>Nic nenalezeno</p><a href="/tvurce/1-x/">X</a></html>')).toBe(
-      'empty',
-    );
+    // A real ČSFD page without results links no film at all.
+    expect(searchPageState(fixture('csfd/search-empty.html'))).toBe('empty');
     expect(searchPageState('<div class="hit"><a href="/film/9-x/">X</a></div>')).toBe('unreadable');
   });
 });
