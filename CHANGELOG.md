@@ -4,6 +4,8 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.2.0 – 2026-11-01
+
 ### Added
 - Ratings on streaming sites: open a film's or series' detail on Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo (SK), Canal+, Rakuten TV, MUBI, KVIFF.TV or JustWatch and its ČSFD rating appears next to the title (found via ČSFD search; "ČSFD ?" when the match is not certain).
 - Welcome page mentions the streaming sites.
