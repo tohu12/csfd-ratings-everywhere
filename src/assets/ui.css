@@ -86,6 +86,25 @@ button {
   border-radius: 6px;
   cursor: pointer;
 }
+.warning {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: #5c3b00;
+  background: #fff4d6;
+}
+.warning a {
+  display: block;
+  margin-top: 4px;
+  color: inherit;
+  font-weight: 600;
+}
+@media (prefers-color-scheme: dark) {
+  .warning {
+    color: #ffe2a3;
+    background: #3d2f12;
+  }
+}
 output {
   margin-left: 8px;
   color: var(--muted);

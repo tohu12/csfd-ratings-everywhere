@@ -4,6 +4,7 @@ import {
   lookupKey,
   parseSearchPage,
   pickMatch,
+  searchPageState,
   searchUrl,
 } from '@/lib/csfd-search';
 import { fixture } from '../helpers/fixtures';
@@ -200,6 +201,23 @@ describe('parseSearchPage', () => {
       '<article><a href="/film/1-s/2-e/" class="film-title-name">Díl 1</a>' +
       '<span class="film-title-info"><span class="info">(epizoda)</span></span></article>';
     expect(parseSearchPage(html)).toEqual([]);
+  });
+});
+
+describe('searchPageState', () => {
+  it('tells readable results, an empty search and results it cannot read apart', () => {
+    expect(searchPageState(fixture('csfd/search-silo.html'))).toBe('results');
+    // Only an episode: skipped by the parser, but the markup is still readable.
+    const episodeOnly =
+      '<article><h3><a href="/film/222521-bakalari/896777-silo/prehled/" class="film-title-name">' +
+      'Bakaláři - Silo</a> <span class="film-title-info"><span class="info">(1977)</span> ' +
+      '<span class="info">(epizoda)</span></span></h3></article>';
+    expect(parseSearchPage(episodeOnly)).toEqual([]);
+    expect(searchPageState(episodeOnly)).toBe('results');
+    expect(searchPageState('<html><p>Nic nenalezeno</p><a href="/tvurce/1-x/">X</a></html>')).toBe(
+      'empty',
+    );
+    expect(searchPageState('<div class="hit"><a href="/film/9-x/">X</a></div>')).toBe('unreadable');
   });
 });
 

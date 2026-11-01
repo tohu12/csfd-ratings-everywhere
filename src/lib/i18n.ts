@@ -29,6 +29,8 @@ export const MESSAGE_KEYS = [
   'optionsCacheCleared',
   'optionsSaved',
   'optionsDisclaimer',
+  'popupCsfdBroken',
+  'popupReport',
   'welcomeTitle',
   'welcomeIntro',
   'welcomeHowTitle',

@@ -9,4 +9,6 @@ void startPopup({
   getActiveTab: async () => (await browser.tabs.query({ active: true, currentWindow: true }))[0],
   sendToTab: (tabId, message) => browser.tabs.sendMessage(tabId, message),
   openOptions: () => void browser.runtime.openOptionsPage(),
+  local: browser.storage.local,
+  version: browser.runtime.getManifest().version,
 });

@@ -1,5 +1,6 @@
 import { isCsfdHost } from './csfd-url';
 import { element } from './dom';
+import { readBrokenPages } from './health';
 import { localizeDocument, type Translate } from './i18n';
 import { type ContentRequest, isContentStats } from './messages';
 import { isHostEnabled, loadSettings, setHostEnabled, updateSettings } from './settings';
@@ -19,7 +20,13 @@ export interface PopupDeps {
   getActiveTab: () => Promise<ActiveTab | undefined>;
   sendToTab: (tabId: number, message: ContentRequest) => Promise<unknown>;
   openOptions: () => void;
+  /** `storage.local`: where the background keeps the ČSFD health state (SPEC §6a). */
+  local: KeyValueStore;
+  /** Extension version, for the problem report. */
+  version: string;
 }
+
+const REPORT_URL = 'https://github.com/tohu12/csfd-ratings-everywhere/issues/new';
 
 /** Popup: per-site and global switch, link count of the active tab, link to options. */
 export async function startPopup({
@@ -30,6 +37,8 @@ export async function startPopup({
   getActiveTab,
   sendToTab,
   openOptions,
+  local,
+  version,
 }: PopupDeps): Promise<void> {
   localizeDocument(doc, t, uiLanguage);
   const siteToggle = element(doc, '#site-toggle', HTMLInputElement);
@@ -59,6 +68,8 @@ export async function startPopup({
     });
   }
 
+  const warning = showCsfdWarning(doc, local, version);
+
   linkCount.textContent = '–';
   if (tab?.id !== undefined && host !== null && !onCsfd) {
     const stats = await sendToTab(tab.id, { type: 'getStats' }).catch(() => null);
@@ -66,6 +77,24 @@ export async function startPopup({
       linkCount.textContent = String(stats.links);
     }
   }
+  await warning;
+}
+
+/** Says when the background can't read ČSFD pages; the report carries no browsing data. */
+async function showCsfdWarning(doc: Document, local: KeyValueStore, version: string) {
+  const pages = await readBrokenPages(local).catch(() => []);
+  if (pages.length === 0) {
+    return;
+  }
+  const kinds = pages.join(', ');
+  const report = new URL(REPORT_URL);
+  report.searchParams.set('title', `ČSFD pages cannot be read: ${kinds}`);
+  report.searchParams.set(
+    'body',
+    `The extension could not read ČSFD ${kinds} pages.\nVersion: ${version}`,
+  );
+  element(doc, '#csfd-report', HTMLAnchorElement).href = report.href;
+  element(doc, '#csfd-warning', HTMLElement).hidden = false;
 }
 
 function webHostname(url: string | undefined): string | null {

@@ -108,6 +108,12 @@
   "optionsDisclaimer": {
     "message": "Unofficial extension, not affiliated with ČSFD. Ratings are read directly from csfd.cz and stored only in your browser."
   },
+  "popupCsfdBroken": {
+    "message": "ČSFD ratings can't be read right now; ČSFD has probably changed its website."
+  },
+  "popupReport": {
+    "message": "Report it"
+  },
   "welcomeTitle": {
     "message": "Welcome to ČSFD Ratings Everywhere!"
   },

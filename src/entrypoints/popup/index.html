@@ -17,6 +17,10 @@
       <input id="global-toggle" type="checkbox" />
     </div>
     <p class="row"><span data-i18n="popupLinks">ČSFD links on this page</span><strong id="link-count">–</strong></p>
+    <p id="csfd-warning" class="warning" hidden>
+      <span data-i18n="popupCsfdBroken">ČSFD ratings can't be read right now; ČSFD has probably changed its website.</span>
+      <a id="csfd-report" href="https://github.com/tohu12/csfd-ratings-everywhere/issues" target="_blank" rel="noopener noreferrer" data-i18n="popupReport">Report it</a>
+    </p>
     <button id="open-options" type="button" data-i18n="popupOptions">Settings</button>
     <script type="module" src="./main.ts"></script>
   </body>

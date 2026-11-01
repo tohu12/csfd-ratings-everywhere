@@ -5,10 +5,12 @@ import {
   type Match,
   parseSearchPage,
   pickMatch,
+  searchPageState,
   searchUrl,
   type TitleQuery,
 } from './csfd-search';
 import { ratingUrl } from './csfd-url';
+import type { CsfdHealth } from './health';
 import type { TitleResult } from './messages';
 import type { Limiter } from './queue';
 import { BLOCKED, ERROR, type Rating } from './rating';
@@ -36,6 +38,8 @@ export interface RatingServiceDeps {
   cache: RatingCache;
   lookups: LookupCache;
   backoff: Backoff;
+  /** Notices when ČSFD's pages stop being readable (SPEC §6a). */
+  health: CsfdHealth;
   limiter: Limiter;
   fetchPage: FetchPage;
 }
@@ -65,6 +69,7 @@ export function createRatingService({
   cache,
   lookups,
   backoff,
+  health,
   limiter,
   fetchPage,
 }: RatingServiceDeps): RatingService {
@@ -126,7 +131,11 @@ export function createRatingService({
       return ERROR;
     }
     // Storage hiccups must not turn a good answer into an error.
-    await settle(backoff.reset(), cache.set(id, rating));
+    await settle(
+      backoff.reset(),
+      cache.set(id, rating),
+      health.record('film', rating.status !== 'error'),
+    );
     return rating;
   };
 
@@ -153,6 +162,14 @@ export function createRatingService({
     return promise;
   };
 
+  /** An empty search (an unknown title) says nothing about ČSFD's markup (SPEC §6a). */
+  const recordSearch = async (html: string): Promise<void> => {
+    const state = searchPageState(html);
+    if (state !== 'empty') {
+      await health.record('search', state === 'results');
+    }
+  };
+
   /** Searches the on-page title first, the document title only when that finds nothing. */
   const search = async (query: TitleQuery): Promise<Match | 'blocked' | 'error'> => {
     for (const title of query.titles) {
@@ -166,8 +183,9 @@ export function createRatingService({
       if (response.status < 200 || response.status >= 300) {
         return 'error';
       }
-      await settle(backoff.reset());
-      const match = pickMatch(query, parseSearchPage(response.text));
+      const candidates = parseSearchPage(response.text);
+      await settle(backoff.reset(), recordSearch(response.text));
+      const match = pickMatch(query, candidates);
       if (match !== 'notfound') {
         return match;
       }

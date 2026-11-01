@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBackoff } from '@/lib/backoff';
 import { createLookupCache, createRatingCache, DEFAULT_LOOKUP_TTL, DEFAULT_TTL } from '@/lib/cache';
+import { BROKEN_AFTER, createHealth } from '@/lib/health';
 import type { Limiter } from '@/lib/queue';
 import type { Rating } from '@/lib/rating';
 import { createRatingService, type FetchPage, retryAfterMs } from '@/lib/rating-service';
@@ -23,9 +24,27 @@ function setup(fetchPage: FetchPage, limiter: Limiter = passThrough) {
     ttlMs: DEFAULT_LOOKUP_TTL,
   });
   const backoff = createBackoff({ store: session, now, baseMs: 1000, maxMs: 8000 });
+  const onHealthChange = vi.fn<(broken: boolean) => void>();
+  const health = createHealth({ store: local, onChange: onHealthChange });
   const fetchSpy = vi.fn(fetchPage);
-  const service = createRatingService({ cache, lookups, backoff, limiter, fetchPage: fetchSpy });
-  return { service, fetchSpy, cache, lookups, backoff, advance: (ms: number) => (time += ms) };
+  const service = createRatingService({
+    cache,
+    lookups,
+    backoff,
+    health,
+    limiter,
+    fetchPage: fetchSpy,
+  });
+  return {
+    service,
+    fetchSpy,
+    cache,
+    lookups,
+    backoff,
+    health,
+    onHealthChange,
+    advance: (ms: number) => (time += ms),
+  };
 }
 
 const page =
@@ -293,6 +312,77 @@ describe('findTitle', () => {
   it('returns error when the limiter throws unexpectedly', async () => {
     s = setup(csfd(), () => Promise.reject(new Error('boom')));
     expect(await s.service.findTitle(DUNA)).toEqual({ status: 'error' });
+  });
+});
+
+describe('ČSFD health (SPEC §6a)', () => {
+  const ids = Array.from({ length: BROKEN_AFTER }, (_, i) => i + 1);
+  const unreadable: FetchPage = async () => ({
+    status: 200,
+    text: '<html><p>a redesigned page</p></html>',
+    retryAfter: null,
+  });
+
+  it('flags film pages after unreadable 2xx pages in a row, and clears on a readable one', async () => {
+    const s = setup(unreadable);
+    for (const id of ids) {
+      await s.service.getRating(id);
+    }
+    expect(await s.health.broken()).toEqual(['film']);
+    expect(s.onHealthChange).toHaveBeenCalledWith(true);
+    s.fetchSpy.mockImplementation(page('csfd/film.html'));
+    await s.service.getRating(99);
+    expect(await s.health.broken()).toEqual([]);
+  });
+
+  it.each([
+    ['an Anubis page', page('csfd/anubis-reject.html')],
+    ['a 503', page('csfd/film.html', 503)],
+    ['a 404', page('csfd/film.html', 404)],
+    [
+      'a network error',
+      async () => {
+        throw new Error('offline');
+      },
+    ],
+  ] as const)('never counts %s as ČSFD having changed', async (_, fetchPage) => {
+    const s = setup(fetchPage);
+    for (const id of ids) {
+      s.advance(1e9); // past any backoff
+      await s.service.getRating(id);
+    }
+    expect(await s.health.broken()).toEqual([]);
+  });
+
+  it('flags searches whose results link films the parser cannot read', async () => {
+    const redesigned = '<html><div class="hit"><a href="/film/6250-duna/">Duna</a></div></html>';
+    const s = setup(async (url) =>
+      url.endsWith('q=Duna')
+        ? { status: 200, text: fixture('csfd/search.html'), retryAfter: null }
+        : { status: 200, text: redesigned, retryAfter: null },
+    );
+    for (const title of ['A', 'B', 'C']) {
+      await s.service.findTitle({ ...DUNA, titles: [title] });
+    }
+    expect(await s.health.broken()).toEqual(['search']);
+    await s.service.findTitle(DUNA); // readable results
+    expect(await s.health.broken()).toEqual([]);
+  });
+
+  it('never counts a film page without a rating as ČSFD having changed', async () => {
+    const s = setup(page('csfd/no-rating.html'));
+    for (const id of ids) {
+      await s.service.getRating(id);
+    }
+    expect(await s.health.broken()).toEqual([]);
+  });
+
+  it('never counts a search without any result (an unknown title) as ČSFD having changed', async () => {
+    const s = setup(csfd());
+    for (const title of ['A', 'B', 'C', 'D']) {
+      await s.service.findTitle({ ...DUNA, titles: [title] });
+    }
+    expect(await s.health.broken()).toEqual([]);
   });
 });
 

@@ -132,6 +132,16 @@ Unofficial project, not affiliated with ČSFD.
   - The colour is derived from the percentage (§5a), not read from the page.
   - Search pages: each `<article>` with a `.film-title-name` link to `/film/<id>/` (the last id of nested URLs), the year and type from `.film-title-info` (no label or `TV film` → film; `seriál`/`TV seriál`/`TV pořad`/`minisérie` → series; `série`/`epizoda` → skipped; other labels → unknown); ids must be safe positive integers and the original name from `.search-name`.
 
+## 6a. Health signal (ČSFD changed its pages)
+
+- The background counts unreadable ČSFD pages **in a row, per kind**, in `storage.local` (`csfdHealth`):
+  - a **film page** is unreadable when a 2xx, non-Anubis response parses to `error`,
+  - a **search page** is unreadable when a 2xx, non-Anubis response links films (`/film/<id>`; on ČSFD search pages only results do) but has no result markup the parser recognises (`.film-title-name` links, seasons and episodes included). An empty search (an unknown title) is not counted either way.
+- A readable page of that kind resets its counter. Updates are serialised (two requests run at once), and nothing is written once a kind is flagged. Blocked responses (Anubis, 429/503), other statuses and network errors are never counted.
+- After **3** unreadable pages of one kind, the toolbar icon shows **`!`** (also restored at start-up, since the badge does not survive a browser restart) and the popup shows a warning with a **Report it** link.
+- An extension update clears the counters (the new version may have fixed the parser).
+- The link opens a prefilled GitHub issue (`tohu12/csfd-ratings-everywhere`) naming only the page kinds and the extension version. Nothing is sent automatically; no visited URLs or titles are included.
+
 ## 7. Settings (`storage.sync`)
 
 - `enabled` (default true): global switch.

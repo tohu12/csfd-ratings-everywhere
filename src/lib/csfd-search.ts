@@ -46,6 +46,23 @@ const FILM_INFO = new Set(['TV film', 'studentský film', 'amatérský film']);
 // Seasons and episodes are never what a VOD detail view shows.
 const SKIPPED_INFO = new Set(['série', 'epizoda']);
 
+// On a search page only the results link films (checked on real pages, 2026-11-01).
+const FILM_LINK = /href="[^"]*\/film\/\d/;
+const TITLE_LINKS = new RegExp(TITLE_LINK.source, 'g');
+
+/**
+ * For the health signal (SPEC §6a): `results` when the page has result markup the parser knows
+ * (seasons and episodes included, though `parseSearchPage` skips them), `empty` when it links no
+ * film at all (an unknown title), `unreadable` when it links films in markup the parser no longer
+ * recognises.
+ */
+export function searchPageState(html: string): 'results' | 'empty' | 'unreadable' {
+  if ([...html.matchAll(TITLE_LINKS)].some((m) => FILM_HREF.test(String(m[1])))) {
+    return 'results';
+  }
+  return FILM_LINK.test(html) ? 'unreadable' : 'empty';
+}
+
 /** Film and series results of a ČSFD search page, in page order. */
 export function parseSearchPage(html: string): Candidate[] {
   return html.split(ARTICLE).slice(1).flatMap(parseArticle);

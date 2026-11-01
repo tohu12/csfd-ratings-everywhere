@@ -23,6 +23,7 @@ After:   https://www.csfd.cz/film/1700849-coutures/prehled/ [65 %]
   - max 2 parallel requests, 400 ms spacing, bounded queue,
   - automatic pause when ČSFD asks to slow down (bot protection, HTTP 429/503 with `Retry-After`).
 - Per-site and global on/off switch, Czech/Slovak/English UI.
+- **Notices when ČSFD changes its website:** after 3 unreadable ČSFD pages in a row, the toolbar icon shows `!` and the popup offers a prefilled report. A nightly CI check does the same for the streaming sites (it never contacts ČSFD).
 - Tiny and fast: content script ≈ 5 kB gzipped, no runtime dependencies.
 - Private: no analytics, nothing sent anywhere except requests to csfd.cz. See [docs/PRIVACY.md](docs/PRIVACY.md).
 

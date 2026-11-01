@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createBackgroundApp, createFetchPage, createMessageHandler } from '@/lib/background-app';
 import type { LookupCache, RatingCache } from '@/lib/cache';
+import { BROKEN_AFTER } from '@/lib/health';
 import type { RatingService } from '@/lib/rating-service';
 import { fixture } from '../helpers/fixtures';
 import { memoryStore } from '../helpers/memory-store';
@@ -75,6 +76,7 @@ describe('createBackgroundApp', () => {
       fetch: fetchFn,
       now: () => 0,
       setTimer: (cb, ms) => setTimeout(cb, ms),
+      showProblem: () => {},
     });
     await expect(handle({ type: 'getRating', id: 7 }, SELF)).resolves.toMatchObject({
       percent: 65,
@@ -82,5 +84,66 @@ describe('createBackgroundApp', () => {
     expect(local.data.has('rating:7')).toBe(true);
     await handle({ type: 'clearCache' }, SELF);
     expect(local.data.size).toBe(0);
+  });
+
+  it('starts even when the stored ČSFD state cannot be read', async () => {
+    const showProblem = vi.fn();
+    const failing = {
+      ...memoryStore(),
+      get: async () => {
+        throw new Error('storage gone');
+      },
+    };
+    expect(() =>
+      createBackgroundApp({
+        runtimeId: 'self',
+        local: failing,
+        session: memoryStore(),
+        fetch: vi.fn(),
+        now: () => 0,
+        setTimer: (cb, ms) => setTimeout(cb, ms),
+        showProblem,
+      }),
+    ).not.toThrow();
+    await Promise.resolve();
+    expect(showProblem).not.toHaveBeenCalled();
+  });
+
+  it('shows a stored ČSFD problem at start-up and new ones as they happen', async () => {
+    const showProblem = vi.fn();
+    const deps = {
+      runtimeId: 'self',
+      session: memoryStore(),
+      now: () => 0,
+      setTimer: (cb: () => void, ms: number) => setTimeout(cb, ms),
+      showProblem,
+    };
+    createBackgroundApp({
+      ...deps,
+      local: memoryStore({ csfdHealth: { film: BROKEN_AFTER, search: 0 } }),
+      fetch: vi.fn(),
+    });
+    await vi.waitFor(() => expect(showProblem).toHaveBeenCalledWith(true));
+
+    showProblem.mockClear();
+    vi.useFakeTimers(); // the real limiter spaces requests by 400 ms
+    try {
+      const unreadable = vi.fn(async () => new Response('<html>redesigned</html>'));
+      const handle = createBackgroundApp({
+        ...deps,
+        now: () => Date.now(),
+        setTimer: (cb, ms) => setTimeout(cb, ms),
+        local: memoryStore(),
+        fetch: unreadable,
+      });
+      const ids = Array.from({ length: BROKEN_AFTER }, (_, i) => i + 1);
+      const answers = Promise.all(ids.map((id) => handle({ type: 'getRating', id }, SELF)));
+      await vi.runAllTimersAsync();
+      await answers;
+      expect(showProblem).toHaveBeenCalledTimes(1); // a healthy start-up shows nothing
+      expect(showProblem).toHaveBeenLastCalledWith(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

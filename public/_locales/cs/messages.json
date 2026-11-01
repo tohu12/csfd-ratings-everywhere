@@ -108,6 +108,12 @@
   "optionsDisclaimer": {
     "message": "Neoficiální rozšíření, není spojeno s ČSFD. Hodnocení se čte přímo z csfd.cz a ukládá jen ve tvém prohlížeči."
   },
+  "popupCsfdBroken": {
+    "message": "Hodnocení z ČSFD se teď nedaří přečíst, ČSFD nejspíš změnilo web."
+  },
+  "popupReport": {
+    "message": "Nahlásit"
+  },
   "welcomeTitle": {
     "message": "Vítejte v ČSFD hodnocení všude!"
   },

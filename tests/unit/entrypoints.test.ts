@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
+import { BROKEN_AFTER } from '@/lib/health';
 import { DEFAULT_SETTINGS } from '@/lib/settings';
 import { loadExtensionPage, loadPage } from '../helpers/dom';
 import { fixture } from '../helpers/fixtures';
@@ -47,6 +48,41 @@ describe('background entrypoint', () => {
       redirect: 'follow',
     });
     await expect(deliver({ type: 'clearCache' }, 'evil')).resolves.toBeUndefined();
+  });
+
+  it('marks the toolbar icon while ČSFD pages are unreadable (action, or browserAction on MV2)', async () => {
+    await fakeBrowser.storage.local.set({ csfdHealth: { film: BROKEN_AFTER, search: 0 } });
+    const setBadgeText = vi.spyOn(fakeBrowser.action, 'setBadgeText');
+    const { default: background } = await import('@/entrypoints/background');
+    background.main();
+    await vi.waitFor(() => expect(setBadgeText).toHaveBeenCalledWith({ text: '!' }));
+
+    // Firefox (MV2): a readable film page clears the mark.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(fixture('csfd/film.html'))),
+    );
+    const action = fakeBrowser.action;
+    const mv2 = vi.spyOn(fakeBrowser.browserAction, 'setBadgeText').mockResolvedValue();
+    // The fake browser leaves this one unimplemented (it throws).
+    vi.spyOn(fakeBrowser.browserAction, 'setBadgeBackgroundColor').mockResolvedValue();
+    Object.assign(fakeBrowser, { action: undefined });
+    try {
+      await deliver({ type: 'getRating', id: 1 });
+      await vi.waitFor(() => expect(mv2).toHaveBeenCalledWith({ text: '' }));
+    } finally {
+      Object.assign(fakeBrowser, { action });
+    }
+  });
+
+  it('forgets a ČSFD problem when the extension is updated', async () => {
+    await fakeBrowser.storage.local.set({ csfdHealth: { film: BROKEN_AFTER, search: 0 } });
+    const { default: background } = await import('@/entrypoints/background');
+    background.main();
+    await fakeBrowser.runtime.onInstalled.trigger({ reason: 'update' } as never);
+    await vi.waitFor(async () =>
+      expect(await fakeBrowser.storage.local.get('csfdHealth')).toEqual({}),
+    );
   });
 
   it('opens the welcome page on install', async () => {
@@ -239,6 +275,8 @@ describe('popup entrypoint', () => {
     })) as typeof fakeBrowser.tabs.sendMessage;
     const openOptionsPage = vi.fn(async () => {});
     fakeBrowser.runtime.openOptionsPage = openOptionsPage;
+    fakeBrowser.runtime.getManifest = () => ({ manifest_version: 3, name: 'x', version: '1.2.0' });
+    await fakeBrowser.storage.local.set({ csfdHealth: { film: BROKEN_AFTER, search: 0 } });
 
     await import('@/entrypoints/popup/main');
     await vi.waitFor(() => expect(document.getElementById('link-count')?.textContent).toBe('2'));
@@ -247,6 +285,9 @@ describe('popup entrypoint', () => {
     expect(fakeBrowser.tabs.sendMessage).toHaveBeenCalledWith(5, { type: 'getStats' });
     document.getElementById('open-options')?.click();
     expect(openOptionsPage).toHaveBeenCalled();
+    // The warning reads the background's state from storage.local.
+    await vi.waitFor(() => expect(document.getElementById('csfd-warning')?.hidden).toBe(false));
+    expect(document.getElementById('csfd-report')?.getAttribute('href')).toContain('1.2.0');
   });
 });
 

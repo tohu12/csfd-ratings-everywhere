@@ -12,7 +12,8 @@ _Last updated: 2026-11-01_
 - **Stored locally:**
   - ratings cache (film id, rating, title) in `storage.local`, for up to 7 days,
   - title lookups (normalised title, year, type → ČSFD film id) in `storage.local`, for up to 30 days,
-  - your settings (on/off, display mode, disabled sites) in `storage.sync`, which your browser may sync across your own devices.
+  - your settings (on/off, display mode, disabled sites) in `storage.sync`, which your browser may sync across your own devices,
+  - two counters of ČSFD pages the extension could not read (to warn you when ČSFD changes its website) in `storage.local`. They are never sent anywhere; the optional "Report it" link opens a GitHub issue form with only the extension version and which kind of ČSFD page (film or search) failed, which you submit yourself.
   - You can clear the cache in the extension's settings.
 
 ## Permissions

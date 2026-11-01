@@ -21,7 +21,41 @@ describe('startPopup', () => {
       getActiveTab: async () => ({ id: 7, url: 'https://www.warcenter.cz/viewtopic.php' }),
       sendToTab: vi.fn(async () => ({ links: 3 })),
       openOptions: vi.fn(),
+      local: memoryStore(),
+      version: '1.2.0',
     };
+  });
+
+  it('hides the ČSFD warning while pages are readable or the state cannot be read', async () => {
+    await startPopup(deps);
+    expect($('#csfd-warning').hidden).toBe(true);
+    deps.local = {
+      ...memoryStore(),
+      get: async () => {
+        throw new Error('storage gone');
+      },
+    };
+    await startPopup(deps);
+    expect($('#csfd-warning').hidden).toBe(true);
+    expect($('#link-count').textContent).toBe('3');
+  });
+
+  it('warns when ČSFD pages are unreadable and links a prefilled report without browsing data', async () => {
+    deps.local = memoryStore({ csfdHealth: { film: 3, search: 5 } });
+    await startPopup(deps);
+    expect($('#csfd-warning').hidden).toBe(false);
+    expect($('#csfd-warning').textContent).toContain('T:popupCsfdBroken');
+    const link = $<HTMLAnchorElement>('#csfd-report');
+    const url = new URL(link.href);
+    expect(url.origin + url.pathname).toBe(
+      'https://github.com/tohu12/csfd-ratings-everywhere/issues/new',
+    );
+    expect(url.searchParams.get('title')).toBe('ČSFD pages cannot be read: film, search');
+    expect(url.searchParams.get('body')).toBe(
+      'The extension could not read ČSFD film, search pages.\nVersion: 1.2.0',
+    );
+    expect(link.target).toBe('_blank');
+    expect(link.rel).toBe('noopener noreferrer');
   });
 
   it('localises and shows state for the active site', async () => {

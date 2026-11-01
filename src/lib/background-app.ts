@@ -9,6 +9,7 @@ import {
   type LookupCache,
   type RatingCache,
 } from './cache';
+import { createHealth } from './health';
 import { isBackgroundRequest } from './messages';
 import { createLimiter } from './queue';
 import { createRatingService, type FetchPage, type RatingService } from './rating-service';
@@ -22,6 +23,8 @@ export interface BackgroundDeps {
   fetch: typeof globalThis.fetch;
   now: Clock;
   setTimer: (callback: () => void, ms: number) => unknown;
+  /** Marks the toolbar icon while ČSFD pages can't be read (SPEC §6a). */
+  showProblem: (broken: boolean) => void;
 }
 
 const MINUTE = 60 * 1000;
@@ -40,9 +43,17 @@ export function createBackgroundApp(deps: BackgroundDeps): MessageHandler {
     maxEntries: DEFAULT_LOOKUP_MAX_ENTRIES,
     ttlMs: DEFAULT_LOOKUP_TTL,
   });
+  const health = createHealth({ store: deps.local, onChange: deps.showProblem });
+  // The icon badge does not survive a browser restart; the stored state does. The badge starts
+  // empty, so a healthy start (most service-worker wakes) touches nothing.
+  void health.broken().then(
+    (pages) => pages.length > 0 && deps.showProblem(true),
+    () => {},
+  );
   const service = createRatingService({
     cache,
     lookups,
+    health,
     backoff: createBackoff({
       store: deps.session,
       now: deps.now,
