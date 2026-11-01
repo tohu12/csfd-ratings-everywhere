@@ -125,6 +125,48 @@ describe('parseSearchPage', () => {
     );
   });
 
+  it('reads a real search page: overview links, studentský film, seasons and episodes skipped', () => {
+    expect(parseSearchPage(fixture('csfd/search-silo.html'))).toEqual([
+      { id: 1025525, titles: ['Silo'], year: 2015, kind: 'film' },
+      { id: 749257, titles: ['Silo'], year: 2019, kind: 'film' },
+      { id: 616799, titles: ['Silo'], year: 2017, kind: 'film' },
+      { id: 1531198, titles: ['Silo'], year: 2023, kind: 'film' },
+      { id: 384472, titles: ['Silo'], year: 2013, kind: 'film' },
+      { id: 1844797, titles: ['The Silo'], year: 2023, kind: 'film' },
+      { id: 1912832, titles: ['The Silo'], year: 2026, kind: 'film' },
+      { id: 1324435, titles: ['Silo'], year: 2023, kind: 'series' },
+    ]);
+  });
+
+  it('reads original names and series from a real search page', () => {
+    const candidates = parseSearchPage(fixture('csfd/search-duna.html'));
+    expect(candidates).toHaveLength(11);
+    expect(candidates).toContainEqual({
+      id: 1100552,
+      titles: ['Die Donau', 'A Duna'],
+      year: 2020,
+      kind: 'series',
+    });
+    expect(candidates).toContainEqual({
+      id: 746555,
+      titles: ['Duna: Proroctví'],
+      year: 2024,
+      kind: 'series',
+    });
+  });
+
+  it('matches real titles, and stays unsure where ČSFD has two same-named films of one year', () => {
+    const silo = parseSearchPage(fixture('csfd/search-silo.html'));
+    const duna = parseSearchPage(fixture('csfd/search-duna.html'));
+    expect(pickMatch({ titles: ['Silo'], year: 2026, kind: 'series' }, silo)).toBe(1324435);
+    expect(pickMatch({ titles: ['Duna: Část druhá'], year: 2024, kind: 'film' }, duna)).toBe(
+      1098951,
+    );
+    expect(pickMatch({ titles: ['Duna'], year: 1984, kind: 'film' }, duna)).toBe(6250);
+    // 236957 (Villeneuve) and 1032386 are both "Duna (2021)": never guess (SPEC §4b).
+    expect(pickMatch({ titles: ['Duna'], year: 2021, kind: 'film' }, duna)).toBe('ambiguous');
+  });
+
   it('tolerates results without a year and pages without results', () => {
     const html =
       '<article><h3><a href="/film/9-x/" class="film-title-name">X</a>' +

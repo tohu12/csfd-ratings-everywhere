@@ -36,7 +36,8 @@ export function searchUrl(title: string): string {
 // Works on strings: Chrome MV3 service workers have no DOMParser.
 const ARTICLE = /<article\b/;
 const TITLE_LINK = /<a\b([^>]*\bfilm-title-name\b[^>]*)>([^<]*)<\/a>/;
-const FILM_HREF = /href="[^"]*\/film\/(\d+)[^"/]*\/(?:(\d+)[^"/]*\/)?"/;
+// Real result links point to a tab: `/film/6250-duna/prehled/`, `/film/1/2-season-3/prehled/`.
+const FILM_HREF = /href="[^"]*\/film\/(\d+)[^"/]*\/(?:(\d+)[^"/]*\/)?(?:[a-z-]+\/)?"/;
 const TITLE_INFO = /class="film-title-info">((?:\s*<span class="info">[^<]*<\/span>)*)/;
 const INFO = /<span class="info">\(([^)]*)\)<\/span>/g;
 const SEARCH_NAME = /<p class="search-name">\(([^)]*)\)<\/p>/;
