@@ -4,6 +4,8 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.3.1 – 2026-11-01
+
 ### Changed
 - The extension description names the streaming services (Netflix, Disney+, HBO Max and others).
 
