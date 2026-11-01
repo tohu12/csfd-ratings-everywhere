@@ -7,6 +7,8 @@ export interface CanaryPage {
   /** Accepted titles; the first is what the page shows in Czech. */
   titles: readonly string[];
   kind: TitleKind;
+  /** Not served to the US-based GitHub runners: checked only by a local `pnpm canary`. */
+  euOnly?: true;
 }
 
 /**
@@ -33,6 +35,7 @@ export const CANARY_PAGES: readonly CanaryPage[] = [
     url: 'https://www.skyshowtime.com/cz/stream/movies/top-gun-maverick/0c637094-0783-3e48-b533-41626b09cbfc',
     titles: ['Top Gun: Maverick'],
     kind: 'film',
+    euOnly: true,
   },
   {
     fixture: 'oneplay-series',
@@ -57,6 +60,7 @@ export const CANARY_PAGES: readonly CanaryPage[] = [
     url: 'https://voyo.markiza.sk/titul/7572-tiche-miesto',
     titles: ['Tiché miesto'],
     kind: 'film',
+    euOnly: true,
   },
   {
     fixture: 'kviff-film',
@@ -69,5 +73,6 @@ export const CANARY_PAGES: readonly CanaryPage[] = [
     url: 'https://www.rakuten.tv/cz?content_type=movies&content_id=oppenheimer',
     titles: ['Oppenheimer'],
     kind: 'film',
+    euOnly: true,
   },
 ];

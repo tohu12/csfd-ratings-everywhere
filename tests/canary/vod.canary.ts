@@ -35,6 +35,15 @@ for (const page of CANARY_PAGES) {
     // Overwritten by the real result; a check that crashes (redirect mid-read, a host removed
     // from VOD_SITES) must alarm, not count as green.
     await write('broken', 'the check crashed before finishing; see the run log');
+    // GitHub runners sit in the US: SkyShowtime redirects to "where can I stream", Voyo answers
+    // 403 and Rakuten serves another page (first CI run, 2026-11-01). Not an alarm.
+    if (page.euOnly && process.env['CI']) {
+      await report(
+        'unavailable',
+        'EU only: not served to the US CI runner (run pnpm canary locally)',
+      );
+      return;
+    }
     const site = findSite(new URL(page.url).hostname);
     if (!site) {
       throw new Error(`${page.url} is not a supported VOD host`);
