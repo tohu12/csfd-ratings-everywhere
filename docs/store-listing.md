@@ -24,11 +24,11 @@ Keep in sync with `public/_locales/*/messages.json` (`extName`, `extDescription`
 
 **Name (≤ 75):** ČSFD hodnocení všude
 
-**Summary (≤ 132, = `extDescription`, Chrome takes it from the manifest):** Neoficiální. Hodnocení ČSFD u odkazů na jakémkoli webu i u filmů na Netflixu, Disney+, HBO Max a dalších streamovacích službách.
+**Summary (≤ 132, = `extDescription`, Chrome takes it from the manifest):** Hodnocení ČSFD hned u odkazů na jakémkoli webu i u filmů a seriálů na Netflixu, Disney+, HBO Max a dalších službách. Neoficiální.
 
 **Description:**
 ```
-Na fórech, v diskuzích a na blozích bývají odkazy na ČSFD často jen jako text a hodnocení filmu tak nevidíte. Toto rozšíření je doplní za vás, na jakémkoli webu.
+Hodnocení ČSFD uvidíte hned tam, kde se o filmu mluví: u odkazů na ČSFD na fórech, v diskuzích, na blozích i na Facebooku a u filmů a seriálů na Netflixu, Disney+, HBO Max a dalších streamovacích službách.
 
 • Textové odkazy na ČSFD udělá klikatelné, včetně seriálů a epizod.
 • U odkazu ukáže hodnocení filmu v % v barvách ČSFD a po najetí myší i název a počet hodnocení.
@@ -49,11 +49,11 @@ Neoficiální rozšíření, není spojeno s ČSFD.
 
 **Name:** ČSFD hodnotenie všade
 
-**Summary:** Neoficiálne. Hodnotenie ČSFD pri odkazoch na akomkoľvek webe aj na Netflixe, Disney+, HBO Max a ďalších streamovacích službách.
+**Summary:** Hodnotenie ČSFD hneď pri odkazoch na akomkoľvek webe aj pri filmoch a seriáloch na Netflixe, Disney+, HBO Max a inde. Neoficiálne.
 
 **Description:**
 ```
-Na fórach, v diskusiách a na blogoch bývajú odkazy na ČSFD často len ako text a hodnotenie filmu tak nevidíte. Toto rozšírenie ich doplní za vás, na akomkoľvek webe.
+Hodnotenie ČSFD uvidíte hneď tam, kde sa o filme hovorí: pri odkazoch na ČSFD na fórach, v diskusiách, na blogoch aj na Facebooku a pri filmoch a seriáloch na Netflixe, Disney+, HBO Max a ďalších streamovacích službách.
 
 • Textové odkazy na ČSFD urobí klikateľné, vrátane seriálov a epizód.
 • Pri odkaze ukáže hodnotenie filmu v % vo farbách ČSFD a po prejdení myšou aj názov a počet hodnotení.
@@ -71,11 +71,11 @@ Súkromie: žiadna analytika ani zber dát. Otvorený zdrojový kód (MIT). Neof
 
 **Name:** ČSFD Ratings Everywhere
 
-**Summary:** Unofficial. ČSFD film ratings next to ČSFD links on any website and on Netflix, Disney+, HBO Max and other streaming services.
+**Summary:** See ČSFD ratings next to links on any website and on films and series on Netflix, Disney+, HBO Max and other services. Unofficial.
 
 **Description:**
 ```
-Forums and blogs often mention ČSFD films as plain-text URLs, so you can't see how good the film is. This extension fills that in, on any website.
+See ČSFD ratings right where films come up: next to ČSFD links in forums, discussions, blogs and on Facebook, and on films and series on Netflix, Disney+, HBO Max and other streaming services.
 
 • Turns plain-text ČSFD URLs into clickable links, including series and episodes.
 • Shows the film's ČSFD rating in % in ČSFD's colours, with the title and number of ratings on hover.
