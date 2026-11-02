@@ -402,12 +402,63 @@ describe('startContentApp', () => {
       expect(io.observer.unobserve).toHaveBeenCalledWith(badge);
     });
 
+    it.each([
+      ['ratings are off', { showRatings: false }, () => {}],
+      ['the rating loaded on hover', {}, () => hover(ext())],
+    ] as const)(
+      'releases removed badges that only waited for the orientation check (%s)',
+      (_, settings, act) => {
+        document.body.innerHTML =
+          '<p id="row"><a id="ext" href="https://www.csfd.cz/film/6-x/">X</a></p>';
+        start(settings);
+        act();
+        const badge = badgeOf(ext());
+        document.getElementById('row')?.remove();
+        const p = document.createElement('p');
+        p.textContent = 'csfd.cz/film/99';
+        document.body.append(p);
+        mutations.add(p);
+        timers.runAll();
+        idle.runAll();
+        expect(io.observer.unobserve).toHaveBeenCalledWith(badge);
+        expect(io.observed.has(badge)).toBe(false);
+      },
+    );
+
     it('shows plain ČSFD links and never fetches when ratings are off', () => {
       start({ showRatings: false });
       expect(pill(badgeOf(ext())).title).toBe('badgeOpen');
       hover(ext());
-      expect(io.observer.observe).not.toHaveBeenCalled();
+      io.showAll();
+      expect(io.observed.size).toBe(0);
+      expect(peekRating).not.toHaveBeenCalled();
       expect(requestRating).not.toHaveBeenCalled();
+    });
+
+    it('keeps a badge upright inside a mirrored container once it is visible', async () => {
+      document.body.innerHTML =
+        '<span style="display: block; transform: scaleY(-1)"><a id="ext" href="https://www.csfd.cz/film/6-x/">X</a></span>';
+      start();
+      expect(badgeOf(ext()).style.transform).toBe('');
+      io.showAll();
+      expect(badgeOf(ext()).style.transform).toBe('scale(1, -1)');
+      await vi.waitFor(() => expect(pill(badgeOf(ext())).textContent).toBe('78 %'));
+      expect(io.observed.size).toBe(0);
+    });
+
+    it('still checks the orientation of a badge whose rating loaded on hover first', () => {
+      document.body.innerHTML =
+        '<span style="display: block; transform: scaleY(-1)"><a id="ext" href="https://www.csfd.cz/film/6-x/">X</a></span>';
+      start();
+      hover(ext());
+      expect(requestRating).toHaveBeenCalledWith(6);
+      expect(io.observed.has(badgeOf(ext()))).toBe(true);
+      io.show(badgeOf(ext()), false);
+      expect(badgeOf(ext()).style.transform).toBe('');
+      io.showAll();
+      expect(badgeOf(ext()).style.transform).toBe('scale(1, -1)');
+      expect(io.observed.size).toBe(0);
+      expect(peekRating).not.toHaveBeenCalled();
     });
 
     it('stop disconnects observers and listeners', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type BadgeOptions, createBadge, describeBadge } from '@/lib/badge';
+import { type BadgeOptions, createBadge, describeBadge, measureUpright } from '@/lib/badge';
 import { OWN_ATTR } from '@/lib/linkify';
 
 const options: BadgeOptions = {
@@ -64,4 +64,57 @@ describe('createBadge', () => {
     badge.render({ kind: 'link' });
     expect(badge.link.className).toBe('pill');
   });
+});
+
+describe('measureUpright', () => {
+  /** A badge host nested in elements with the given transforms, outermost first. */
+  const hostIn = (...transforms: string[]) => {
+    let parent: HTMLElement = document.body;
+    parent.replaceChildren();
+    for (const transform of transforms) {
+      const el = document.createElement('div');
+      el.style.transform = transform;
+      parent.append(el);
+      parent = el;
+    }
+    const host = document.createElement('span');
+    parent.append(host);
+    const write = measureUpright(host);
+    expect(host.style.transform).toBe(''); // measuring never writes
+    write();
+    return host;
+  };
+
+  it('undoes a mirrored container (Google lifts the URL above the title this way)', () => {
+    const host = hostIn('scaleY(-1)');
+    expect(host.style.transform).toBe('scale(1, -1)');
+    expect(host.style.display).toBe('inline-block');
+  });
+
+  it.each([
+    [['rotate(180deg)'], 'scale(-1, -1)'],
+    [['scaleX(-1)', 'translateX(4px)'], 'scale(-1, 1)'],
+  ])('undoes %j', (transforms, expected) => {
+    expect(hostIn(...transforms).style.transform).toBe(expected);
+  });
+
+  it('ignores transforms of inline ancestors, which browsers never draw', () => {
+    const span = document.createElement('span');
+    span.style.display = 'inline'; // happy-dom has no UA default for it
+    span.style.transform = 'scaleY(-1)';
+    const host = document.createElement('span');
+    span.append(host);
+    document.body.replaceChildren(span);
+    measureUpright(host)();
+    expect(host.style.transform).toBe('');
+  });
+
+  it.each([[[]], [['none', 'scale(2)']], [['scaleY(-1)', 'scaleY(-1)']]])(
+    'leaves an upright badge alone: %j',
+    (transforms) => {
+      const host = hostIn(...transforms);
+      expect(host.style.transform).toBe('');
+      expect(host.style.display).toBe('');
+    },
+  );
 });

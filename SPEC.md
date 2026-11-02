@@ -84,6 +84,7 @@ Unofficial project, not affiliated with ČSFD.
 
 - `<span data-csfd-linker="badge">` with an open shadow root: page CSS cannot change it, and its CSS never leaks out.
 - The badge links to `https://www.csfd.cz/film/<id>/prehled/` (new tab).
+- The badge stays readable inside a mirrored container: when it first becomes visible, it cancels the net mirroring of its ancestors (Google flips a result's link block with `scaleY(-1)` to show the URL above the title).
 - States:
 
 | state            | text             | colour                               | tooltip                            |

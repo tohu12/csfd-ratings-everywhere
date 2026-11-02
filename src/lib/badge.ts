@@ -74,6 +74,31 @@ export function createBadge(doc: Document, href: string, options: BadgeOptions):
   };
 }
 
+/**
+ * Pages may mirror a container and flip its children back: Google lifts the URL above the title
+ * with `scaleY(-1)`. A badge inserted there would read upside down, so it cancels the net
+ * mirroring of its ancestors. Only reads computed styles and returns the write, so callers can
+ * measure many badges before changing any (one forced layout instead of one per badge).
+ */
+export function measureUpright(host: HTMLElement): () => void {
+  let net = new DOMMatrix();
+  for (let el = host.parentElement; el; el = el.parentElement) {
+    const style = getComputedStyle(el);
+    // Browsers report transforms of inline boxes, but never draw them.
+    if (style.display !== 'inline' && style.transform !== 'none') {
+      net = new DOMMatrix(style.transform).multiply(net);
+    }
+  }
+  const x = net.a < 0 ? -1 : 1;
+  const y = net.d < 0 ? -1 : 1;
+  return () => {
+    if (x < 0 || y < 0) {
+      host.style.display = 'inline-block'; // inline boxes cannot be transformed
+      host.style.transform = `scale(${x}, ${y})`;
+    }
+  };
+}
+
 /** Text, colour class and accessible description for a badge state. */
 export function describeBadge(state: BadgeState, { t, formatCount }: BadgeOptions): BadgeView {
   if (state.kind === 'idle') {

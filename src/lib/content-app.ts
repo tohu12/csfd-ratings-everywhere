@@ -1,4 +1,4 @@
-import { type Badge, type BadgeOptions, createBadge } from './badge';
+import { type Badge, type BadgeOptions, createBadge, measureUpright } from './badge';
 import { ratingUrl } from './csfd-url';
 import { createHoverCard } from './hover-card';
 import type { Translate } from './i18n';
@@ -245,19 +245,30 @@ function badgeDecorator(
   intent: Intent,
   deps: ContentDeps,
 ): Decorator {
+  // Hosts still to be checked for mirroring, and rating loads waiting for visibility.
+  const unchecked = new Map<Element, () => () => void>();
   const waiting = new Map<Element, () => void>();
   const visibility = deps.createIntersectionObserver((entries) => {
-    for (const entry of entries) {
-      const onVisible = waiting.get(entry.target);
-      if (entry.isIntersecting && onVisible) {
-        forget(entry.target);
-        onVisible();
-      }
+    const visible = entries.filter((entry) => entry.isIntersecting).map((entry) => entry.target);
+    // All reads before any write: one forced layout per callback, not one per badge.
+    const writes = visible.map((target) => unchecked.get(target)?.());
+    for (const target of visible) {
+      unchecked.delete(target);
+    }
+    for (const write of writes) {
+      write?.();
+    }
+    for (const target of visible) {
+      const onVisible = waiting.get(target);
+      forget(target);
+      onVisible?.();
     }
   });
   const forget = (host: Element) => {
     waiting.delete(host);
-    visibility.unobserve(host);
+    if (!unchecked.has(host)) {
+      visibility.unobserve(host);
+    }
   };
   // Films auto-loaded on this page. Each film is tried at most once, even if that load fails;
   // further links to it join the running load or wait for a hover.
@@ -274,28 +285,31 @@ function badgeDecorator(
     decorate({ anchor, link }) {
       const badge = createBadge(doc, ratingUrl(link.id), options);
       anchor.after(badge.host);
-      if (!showRatings) {
+      unchecked.set(badge.host, () => measureUpright(badge.host));
+      if (showRatings) {
+        badge.render({ kind: 'idle' });
+        const controller = badgeRating(badge, link.id, ratings, mayAutoLoad, () =>
+          forget(badge.host),
+        );
+        waiting.set(badge.host, controller.onVisible);
+        intent([anchor, badge.host], { act: controller.onUserAction, leave: () => {} });
+      } else {
         badge.render({ kind: 'link' });
-        return;
       }
-      badge.render({ kind: 'idle' });
-      const controller = badgeRating(badge, link.id, ratings, mayAutoLoad, () =>
-        forget(badge.host),
-      );
-      waiting.set(badge.host, controller.onVisible);
       visibility.observe(badge.host);
-      intent([anchor, badge.host], { act: controller.onUserAction, leave: () => {} });
     },
     afterBatch() {
       // Feeds and chats drop old content: release badges that left the page unseen.
-      for (const host of [...waiting.keys()]) {
+      for (const host of [...unchecked.keys(), ...waiting.keys()]) {
         if (!host.isConnected) {
+          unchecked.delete(host);
           forget(host);
         }
       }
     },
     stop() {
       visibility.disconnect();
+      unchecked.clear();
       waiting.clear();
     },
   };
