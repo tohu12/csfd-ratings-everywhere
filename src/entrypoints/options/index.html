@@ -12,22 +12,22 @@
       <h1 data-i18n="optionsTitle">ČSFD Ratings Everywhere – settings</h1>
       <div class="row">
         <label for="enabled" data-i18n="optionsEnabled">Extension is on</label>
-        <input id="enabled" type="checkbox" />
+        <input id="enabled" type="checkbox" disabled />
       </div>
       <div class="row">
         <label for="show-ratings" data-i18n="optionsShowRatings">Load ratings in % (otherwise links only)</label>
-        <input id="show-ratings" type="checkbox" />
+        <input id="show-ratings" type="checkbox" disabled />
       </div>
       <div class="row">
         <label for="display" data-i18n="optionsDisplay">Show ratings as</label>
-        <select id="display">
+        <select id="display" disabled>
           <option value="badge" data-i18n="optionsDisplayBadge">Badge next to the link</option>
           <option value="tooltip" data-i18n="optionsDisplayTooltip">Hover card only (nothing inserted into the page)</option>
         </select>
       </div>
       <div class="stack">
         <label for="disabled-hosts" data-i18n="optionsDisabledHosts">Disabled sites</label>
-        <textarea id="disabled-hosts" rows="6" spellcheck="false"></textarea>
+        <textarea id="disabled-hosts" rows="6" spellcheck="false" disabled></textarea>
         <small data-i18n="optionsDisabledHostsHint">One domain per line, e.g. example.com</small>
       </div>
       <p>

@@ -38,6 +38,17 @@ describe('startOptions', () => {
     expect($<HTMLTextAreaElement>('#disabled-hosts').value).toBe('a.cz\nb.cz');
   });
 
+  it('keeps the controls disabled until the stored settings are shown', async () => {
+    const controls = ['#enabled', '#show-ratings', '#display', '#disabled-hosts'].map((sel) =>
+      $<HTMLInputElement>(sel),
+    );
+    const started = startOptions(deps);
+    // A change made before this point would be lost: the stored settings would overwrite it.
+    expect(controls.map((c) => c.disabled)).toEqual([true, true, true, true]);
+    await started;
+    expect(controls.map((c) => c.disabled)).toEqual([false, false, false, false]);
+  });
+
   const change = (selector: string, apply: (el: HTMLElement) => void) => {
     const el = $(selector);
     apply(el);

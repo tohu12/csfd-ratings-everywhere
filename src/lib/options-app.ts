@@ -63,4 +63,8 @@ export async function startOptions({
     await sendToBackground({ type: 'clearCache' });
     status.textContent = t('optionsCacheCleared');
   });
+  // Disabled in the HTML until now: an earlier change would be overwritten by the stored settings.
+  for (const control of [enabled, showRatings, display, hosts]) {
+    control.disabled = false;
+  }
 }
