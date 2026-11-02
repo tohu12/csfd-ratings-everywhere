@@ -13,23 +13,17 @@
       "Bash(pnpm exec biome *)",
       "Bash(pnpm exec vitest *)",
       "Bash(pnpm exec playwright test *)",
-      "Bash(git status *)",
-      "Bash(git diff *)",
-      "Bash(git log *)"
+      "Bash(git *)",
+      "Bash(gh *)"
     ],
-    "ask": [
-      "Bash(git push *)",
-      "Bash(gh release *)",
-      "Bash(gh pr merge *)",
-      "Bash(pnpm add *)",
-      "Bash(pnpm publish *)"
-    ],
+    "ask": ["Bash(pnpm add *)", "Bash(pnpm publish *)"],
     "deny": [
       "Read(./.env)",
       "Read(./.env.*)",
       "Bash(rm -rf *)",
       "Bash(pnpm exec wxt submit *)",
-      "Bash(git push --force *)"
+      "Bash(git push --force *)",
+      "Bash(git push -f *)"
     ]
   },
   "hooks": {
