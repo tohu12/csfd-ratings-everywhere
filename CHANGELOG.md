@@ -4,6 +4,11 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.3.2 – 2026-11-02
+
+### Fixed
+- On Google search results the rating badge showed upside down. Badges now stay upright when a page mirrors their container.
+
 ## 1.3.1 – 2026-11-01
 
 ### Changed
