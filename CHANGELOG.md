@@ -4,6 +4,14 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.3.3 – 2026-11-02
+
+### Added
+- ČSFD film links that go through a redirect page now get a rating too: Facebook and Messenger (`l.facebook.com/l.php?u=…`, as in every Facebook post) and Google in any country (`google.<country>/url?q=…`).
+
+### Fixed
+- Settings page: a change made right after opening the page could be lost; the controls now wait until the stored settings are loaded.
+
 ## 1.3.2 – 2026-11-02
 
 ### Fixed
