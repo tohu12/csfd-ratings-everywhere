@@ -95,6 +95,16 @@ describe('findExistingLinks', () => {
     expect(found.map((f) => [f.anchor.id, f.link.id])).toEqual([['ext', 1773198]]);
   });
 
+  it('finds film links that Facebook sends through its redirect page', () => {
+    document.body.innerHTML = `
+      <p><a id="fb" href="https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.csfd.cz%2Ffilm%2F1819297-pycha-a-predsudek%2Fvidea%2F&amp;h=x">https://www.csfd.cz/film/1819297-pycha-a-predsudek/videa/</a></p>
+      <p><a href="https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.csfd.cz%2Fnovinky%2F10055-ptaci%2F&amp;h=y">news</a></p>
+      <p><a href="https://l.facebook.com/l.php?u=https%3A%2F%2Fevil.example%2Ffilm%2F1%2F&amp;h=z">csfd.cz</a></p>`;
+    expect(findExistingLinks(document.body).map((f) => [f.anchor.id, f.link.id])).toEqual([
+      ['fb', 1819297],
+    ]);
+  });
+
   it('skips anchors inside editors and code blocks', () => {
     document.body.innerHTML = `
       <div contenteditable="true"><p><a id="edit" href="https://www.csfd.cz/film/1-x/">a</a></p></div>

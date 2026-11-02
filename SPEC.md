@@ -20,6 +20,11 @@ Unofficial project, not affiliated with ČSFD.
 - Trailing punctuation `. , ; : ! ? ) ] } > " '` is not part of the URL. It is trimmed in linear time.
 - Only `/film/` URLs (no `/tvurce/`, `/uzivatel/`, search pages).
 - A ČSFD URL glued to the end of a longer word (e.g. `xcsfd.cz`) is not matched.
+- Existing links that go through a known redirect page are unwrapped **one level** to their target, which must itself be a ČSFD film URL as above:
+  - `l.facebook.com/l.php`, `lm.facebook.com/l.php`, `l.messenger.com/l.php`: parameter `u`,
+  - Google in any country (`google.<cc>`, `google.com`, `google.co.<cc>`, `google.com.<cc>`, with or without `www.`), path `/url`: parameter `url`, or `q`.
+  - Only `http`/`https` redirect pages. The VOD script (§4b) does not unwrap: it only checks whether a page links to ČSFD directly.
+  - The badge still links to the ČSFD page directly (§5a); the page's own link is left as it is (§3).
 
 ## 3. Linkify
 

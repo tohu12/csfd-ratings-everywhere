@@ -25,6 +25,7 @@ Behaviour is specified in **SPEC.md**. Read it before changing behaviour and upd
 ```
 src/lib/            pure, framework-free core (no `browser.*`, no module-level state)
   csfd-url.ts       find/parse ČSFD URLs
+  link-redirect.ts  unwrap Facebook/Messenger/Google (any country) redirect links (main content script only)
   linkify.ts        DOM: text node → anchors, find existing links
   scanner.ts        DOM walking, chunking, MutationObserver orchestration
   badge.ts          shadow-DOM badge rendering + shared badge view model

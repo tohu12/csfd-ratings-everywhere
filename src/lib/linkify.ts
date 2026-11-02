@@ -1,4 +1,5 @@
 import { type CsfdLink, findCsfdUrls, mightContainCsfd, parseCsfdUrl } from './csfd-url';
+import { unwrapRedirect } from './link-redirect';
 
 /** Marks every node the extension inserts, so it is never processed again. */
 export const OWN_ATTR = 'data-csfd-linker';
@@ -99,7 +100,7 @@ export function findExistingLinks(root: ParentNode): FoundLink[] {
     if (anchor.parentElement === null || isInsideSkipped(anchor.parentElement)) {
       continue;
     }
-    const link = parseCsfdUrl(anchor.href);
+    const link = parseCsfdUrl(unwrapRedirect(anchor.href));
     if (link) {
       found.push({ anchor, link });
     }
