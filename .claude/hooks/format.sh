@@ -4,6 +4,8 @@
 set -uo pipefail
 file=$(jq -r '.tool_input.file_path // empty')
 [[ -z "$file" || ! -f "$file" ]] && exit 0
+# Biome crashes on paths outside the project root (e.g. ~/.claude/settings.json).
+[[ "$file" != "$CLAUDE_PROJECT_DIR"/* ]] && exit 0
 case "$file" in
   *.ts|*.js|*.json|*.jsonc|*.css) ;;
   *) exit 0 ;;
