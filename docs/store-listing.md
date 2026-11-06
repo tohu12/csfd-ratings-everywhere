@@ -16,11 +16,13 @@ Keep in sync with `public/_locales/*/messages.json` (`extName`, `extDescription`
 | Asset | File | Where |
 |---|---|---|
 | Store icon 128×128 (96 px art + 16 px padding) | `public/icon/128.png` | CWS, Edge, AMO (AMO takes the icon from the package) |
-| Screenshots 1280×800, max 5, order 1→5 (5 = streaming sites: a fictional page, service names as text only, no logos) | `docs/store/screenshot-{1..5}-*-{cs,en}.png` | CWS (per locale), Edge, AMO |
+| Screenshots 1280×800, max 5, order 1→5 (5 = streaming sites: a fictional page, only Netflix · Disney+ · HBO Max + "and more" as text, no logos) | `docs/store/screenshot-{1..5}-*-{cs,en}.png` | CWS (per locale), Edge, AMO |
 | Small promo tile 440×280 | `docs/store/promo-small-440x280.png` | CWS (required), Edge |
 | Marquee 1400×560 | `docs/store/promo-marquee-1400x560.png` | CWS (used only if featured) |
 
 ## Czech (primary listing)
+
+> **Never list all the streaming services in store metadata** (description, screenshots, promo tiles). Chrome Web Store rejected v1.3.1 for keyword spam ("Yellow Argon", handled 2026-11-06) because of the 15-name list. Name at most Netflix, Disney+ and HBO Max, once, and point to the website for the full list.
 
 **Name (≤ 75):** ČSFD hodnocení všude
 
@@ -34,7 +36,7 @@ Hodnocení ČSFD uvidíte hned tam, kde se o filmu mluví: u odkazů na ČSFD na
 • U odkazu ukáže hodnocení filmu v % v barvách ČSFD a po najetí myší i název a počet hodnocení.
 • Prvních 10 filmů na stránce se načte hned, ostatní po najetí myší.
 • Zobrazení si vyberete: malý odznak u odkazu, nebo jen plovoucí karta (nic se nevkládá do stránky).
-• Na streamovacích službách ukáže hodnocení u otevřeného detailu filmu nebo seriálu: Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo, Canal+, Rakuten TV, MUBI, KVIFF.TV a JustWatch. Když si není jistý, ukáže „ČSFD ?“ s odkazem na hledání.
+• Na streamovacích službách ukáže hodnocení u otevřeného detailu filmu nebo seriálu. Seznam podporovaných služeb najdete na webu rozšíření. Když si není jistý, ukáže „ČSFD ?“ s odkazem na hledání.
 • Na libovolném webu jde vypnout jedním kliknutím.
 • Česky, slovensky a anglicky.
 
@@ -59,7 +61,7 @@ Hodnotenie ČSFD uvidíte hneď tam, kde sa o filme hovorí: pri odkazoch na ČS
 • Pri odkaze ukáže hodnotenie filmu v % vo farbách ČSFD a po prejdení myšou aj názov a počet hodnotení.
 • Prvých 10 filmov na stránke sa načíta hneď, ostatné po prejdení myšou.
 • Zobrazenie si vyberiete: malý odznak pri odkaze, alebo len plávajúca karta (nič sa nevkladá do stránky).
-• Na streamovacích službách ukáže hodnotenie pri otvorenom detaile filmu alebo seriálu: Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo, Canal+, Rakuten TV, MUBI, KVIFF.TV a JustWatch. Keď si nie je istý, ukáže „ČSFD ?“ s odkazom na vyhľadávanie.
+• Na streamovacích službách ukáže hodnotenie pri otvorenom detaile filmu alebo seriálu. Zoznam podporovaných služieb nájdete na webe rozšírenia. Keď si nie je istý, ukáže „ČSFD ?“ s odkazom na vyhľadávanie.
 • Na ľubovoľnom webe sa dá vypnúť jedným kliknutím.
 
 Šetrné k ČSFD aj k vášmu prehliadaču: každý film sa stiahne len raz, hodnotenia sa ukladajú do vyrovnávacej pamäte a počet požiadaviek je obmedzený.
@@ -81,7 +83,7 @@ See ČSFD ratings right where films come up: next to ČSFD links in forums, disc
 • Shows the film's ČSFD rating in % in ČSFD's colours, with the title and number of ratings on hover.
 • The first 10 films on a page load right away; others when you hover.
 • Choose how it looks: a small badge next to the link, or a hover card only (nothing is inserted into the page).
-• On streaming sites it shows the rating of the open film or series: Netflix, Disney+, HBO Max, Apple TV, Prime Video, SkyShowtime, Oneplay, iVysílání ČT, Prima+, Voyo, Canal+, Rakuten TV, MUBI, KVIFF.TV and JustWatch. When unsure, it shows "ČSFD ?" linking to the search.
+• On streaming sites it shows the rating of the open film or series. The supported services are listed on the extension's website. When unsure, it shows "ČSFD ?" linking to the search.
 • Turn it off for any site with one click.
 • Czech, Slovak and English.
 
