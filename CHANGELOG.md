@@ -4,6 +4,8 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.3.4 – 2026-11-06
+
 ### Changed
 - The store summary starts with what the extension does (ratings next to links on any website and on films and series on streaming services); "Unofficial" moved to the end.
 
