@@ -39,11 +39,14 @@ const STREAMING_CAPTION = {
   cs: 'Hodnocení ČSFD i na streamovacích službách',
   en: 'ČSFD ratings on streaming services too',
 };
-// Keep in sync with VOD_SITES (src/lib/vod/detect.ts).
-const STREAMING_SERVICES =
-  'Netflix · Disney+ · HBO Max · Apple TV · Prime Video · SkyShowtime · Oneplay · iVysílání ČT · Prima+ · Voyo · Canal+ · Rakuten TV · MUBI · KVIFF.TV · JustWatch';
+// Only the three best-known services: listing all of them in store metadata (screenshots
+// included) got the listing rejected for keyword spam ("Yellow Argon", 2026-11).
+const STREAMING_SERVICES = {
+  cs: 'Netflix · Disney+ · HBO Max a další',
+  en: 'Netflix · Disney+ · HBO Max and more',
+};
 
-const streaming = (caption) => `<!doctype html><html lang="cs"><head><meta charset="utf-8">
+const streaming = (lang) => `<!doctype html><html lang="cs"><head><meta charset="utf-8">
 <title>${FILMS[101].name} | Demo kino</title><style>
   body{margin:0;background:#101114;color:#eee;font:18px/1.5 system-ui}
   .caption{background:linear-gradient(135deg,#ba0305,#7d0204);color:#fff;text-align:center;
@@ -57,7 +60,7 @@ const streaming = (caption) => `<!doctype html><html lang="cs"><head><meta chars
   .meta{color:#aaa;margin-bottom:18px;font-size:19px}
   p{color:#ccc;margin:0 0 26px}
   .play{display:inline-block;background:#fff;color:#111;font-weight:700;padding:12px 30px;border-radius:8px}
-</style></head><body><div class="caption">${caption}<small>${STREAMING_SERVICES}</small></div><div class="top">DEMO KINO</div><div class="hero"></div><main>
+</style></head><body><div class="caption">${STREAMING_CAPTION[lang]}<small>${STREAMING_SERVICES[lang]}</small></div><div class="top">DEMO KINO</div><div class="hero"></div><main>
 <h1>${FILMS[101].name}</h1>
 <div class="meta"><span>2024</span> · <span>1 h 52 min</span> · Drama</div>
 <p>Poslední prázdniny před odjezdem na studia. Čtyři kamarádi, jedno jezero a léto, na které nezapomenou.</p>
@@ -130,7 +133,7 @@ async function launch(lang) {
     route.fulfill({ contentType: 'text/html', body: forum }),
   );
   await context.route('https://kviff.tv/**', (route) =>
-    route.fulfill({ contentType: 'text/html', body: streaming(STREAMING_CAPTION[lang]) }),
+    route.fulfill({ contentType: 'text/html', body: streaming(lang) }),
   );
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
   return { context, extensionId: new URL(worker.url()).host };
