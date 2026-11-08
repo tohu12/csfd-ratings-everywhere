@@ -18,7 +18,7 @@ Internal working document (not published on the website). A risk overview from 2
    - The name starting with "ČSFD" and the exact ČSFD red raise the risk (accepted by the owner, see STATUS.md).
    - The same facts could be argued as unfair competition: likelihood of confusion (§ 2981 of the Civil Code) or free-riding on reputation (§ 2982). Czech courts read the "competitive relationship" broadly.
    - Mitigations in place:
-     - "Unofficial, not affiliated with ČSFD" in all texts,
+     - "Unofficial, not affiliated with ČSFD" at the end of the store descriptions, in the options and welcome pages, README and on the website (the short store summary leaves it out since 2026-11-08, the owner's decision),
      - the trademark notice in README and on the website,
      - an icon shape unlike the ČSFD logo.
    - Stores remove extensions on a rights-holder complaint alone, without a court.
