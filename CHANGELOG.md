@@ -4,6 +4,8 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.3.5 – 2026-11-08
+
 ### Changed
 - The store summary no longer ends with "Unofficial"; the disclaimer stays at the end of the store description and in the extension's settings and welcome pages.
 
