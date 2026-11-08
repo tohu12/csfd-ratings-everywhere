@@ -31,7 +31,7 @@ Internal working document (not published on the website). Sources: Chrome Web St
 ### Submission day
 - [x] CWS: developer account (one-time fee), verified contact e-mail, publisher name; upload `*-chrome.zip`, fill listing + Privacy practices (v1.3.1, 2026-11-01)
 - [x] Edge Partner Center: upload `*-edge.zip`, reuse texts/graphics (v1.3.5, submitted 2026-11-08)
-- [ ] AMO: upload `*-firefox.zip` + `*-sources.zip`
+- [x] AMO: upload `*-firefox.zip` + `*-sources.zip` (v1.3.5, submitted 2026-11-08)
 - [ ] Expect a longer CWS review because of the `<all_urls>` content script (the dashboard warned about it on submission)
 
 ### After approval

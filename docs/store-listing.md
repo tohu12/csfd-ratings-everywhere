@@ -108,6 +108,24 @@ Unofficial; not affiliated with ČSFD.
 
 ## Firefox (AMO)
 
+- Developer Hub: https://addons.mozilla.org/developers/addon/%C4%8Dsfd-ratings-everywhere/edit (slug `čsfd-ratings-everywhere`, add-on id `csfd-ratings-everywhere@tohu12.github.io`), developer name "ToHu12". Listed on AMO; Firefox and Firefox for Android.
+- Listing: descriptions in cs, sk and en-US (the summary comes from the manifest), category "Photos, Music & Videos", license MIT, support website = GitHub issues (no support e-mail), privacy policy = the text of `docs/PRIVACY.md`, the five en screenshots with the English captions from the Edge section.
+- "Do you need to submit source code?": **Yes**, attach `*-sources.zip`. Notes to reviewer (build steps + how to test):
+
+```
+Build from source (the code is bundled by WXT/Vite, so the sources zip is attached to this version):
+1. Node 22 (see .nvmrc) and pnpm 11 (corepack enable).
+2. Unzip the sources and run: pnpm install --frozen-lockfile && pnpm build:firefox
+3. Output: .output/firefox-mv2 (identical to the uploaded package). Source repository: https://github.com/tohu12/csfd-ratings-everywhere (tag v1.3.5).
+
+How to test (no account needed):
+1. Open any page that links to ČSFD (csfd.cz, the Czech film database), e.g. https://github.com/tohu12/csfd-ratings-everywhere - a small badge with the film's ČSFD rating (e.g. 72 %) appears next to the ČSFD film link; hover it for the title and number of ratings. Plain-text ČSFD film URLs become clickable links.
+2. Streaming sites: open a public detail page, e.g. https://www.ceskatelevize.cz/porady/14106473148-wind-river/ or https://kviff.tv/videos/az-na-veky, then click anywhere on the page once (the lookup waits for a user action). The rating appears next to the title.
+3. Toolbar popup: switch the extension off for the current site. The options page switches between the badge and a hover-card-only mode.
+
+Network: only https://www.csfd.cz (public film and search pages): at most the first 10 films per page automatically, others on hover; cached. No analytics, no remote code, no data collection beyond what data_collection_permissions declares (websiteContent: film ids / opened titles are sent to csfd.cz). ČSFD may show a bot-protection page to some networks; the extension then shows a neutral "ČSFD" badge linking to the film.
+```
+
 - Upload `*-firefox.zip` **and** `*-sources.zip` (the code is bundled, so AMO reviewers need the sources).
 - Build instructions for reviewers: `pnpm install && pnpm build:firefox` (Node 22, pnpm 11). Output: `.output/firefox-mv2`.
 - Data collection: the manifest declares `required: ["websiteContent"]` (see SPEC §8).
