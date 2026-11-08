@@ -114,4 +114,20 @@ Unofficial; not affiliated with ČSFD.
 
 ## Edge Add-ons
 
-- Upload the `*-edge.zip` (same code as Chrome). Reuse the CWS texts and graphics.
+- Partner Center: https://partner.microsoft.com/dashboard/microsoftedge/a446f9df-188c-4ed6-ad21-7d0f10156243 (Store ID `0RDCKBP72HBJ`, CRX ID `igdncdlikjdcemekhomjlbllhakiiddg`). Publisher display name "ToHu".
+- Upload the `*-edge.zip` (same code as Chrome). Reuse the CWS descriptions, the 128 px icon as logo and both promo tiles. Category Entertainment, website + support URLs as above.
+- Privacy tab: the same single purpose, permission justifications and "Website content" as the CWS Privacy practices tab; privacy policy URL as above. The three "I certify" disclosures are ticked by the owner.
+- Screenshots: cs (also used for sk) and en, with captions in each language (order 1 before, 2 badges, 3 hover card, then streaming and popup in cs/sk, popup and streaming in en):
+  - cs: "Bez rozšíření: odkazy na ČSFD jen jako text", "S rozšířením: hodnocení u každého odkazu", "Po najetí myší: název filmu a počet hodnocení", "Hodnocení i na streamovacích službách", "Vypnutí na libovolném webu jedním kliknutím"
+  - sk: "Bez rozšírenia: odkazy na ČSFD len ako text", "S rozšírením: hodnotenie pri každom odkaze", "Po prejdení myšou: názov filmu a počet hodnotení", "Hodnotenie aj na streamovacích službách", "Vypnutie na ľubovoľnom webe jedným kliknutím"
+  - en: "Without the extension: ČSFD links as plain text", "With the extension: a rating next to every link", "On hover: the film's title and number of ratings", "Turn it off for any site with one click", "Ratings on streaming services too"
+- Submission: answer "Yes, I need to provide … other info for testers" (with "No" the notes field is locked) and paste these certification notes; they are required with every submission:
+
+```
+No account or login is needed. How to test:
+1) Open any page that links to ČSFD (csfd.cz, the Czech film database), e.g. the project README: https://github.com/tohu12/csfd-ratings-everywhere - a small badge with the film's ČSFD rating (e.g. 72 %) appears next to the ČSFD film link. Hover it to see the title and number of ratings. Plain-text ČSFD film URLs on a page become clickable links.
+2) Streaming sites: open a public detail page, e.g. https://www.ceskatelevize.cz/porady/14106473148-wind-river/ or https://kviff.tv/videos/az-na-veky, then click anywhere on the page once (the lookup waits for a user action). The ČSFD rating appears next to the title.
+3) Toolbar popup: switch the extension off for the current site. The options page switches between the badge and a hover-card-only mode.
+Network: the extension contacts only https://www.csfd.cz (public film and search pages) to read ratings: at most the first 10 films per page automatically, others on hover; results are cached. No analytics, no remote code, no data collection. ČSFD may show a bot-protection page to some networks; the extension then shows a neutral "ČSFD" badge linking to the film instead of a rating.
+Same package as our Chrome Web Store listing (item kbjdlndiblnokkakiadadgidobnnmpne). Source code: https://github.com/tohu12/csfd-ratings-everywhere
+```
