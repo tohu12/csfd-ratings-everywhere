@@ -6,6 +6,9 @@ export interface Cache<K, V> {
   get(key: K): Promise<V | null>;
   set(key: K, value: V): Promise<void>;
   clear(): Promise<void>;
+  /** Stored entries, for the options page. Entries past their TTL are dropped when read, so
+   * this is what storage holds, not how many answers are still usable. */
+  size(): Promise<number>;
 }
 
 export type RatingCache = Cache<number, Rating>;
@@ -176,6 +179,10 @@ function createTtlCache<K, V>({
       const keys = await loadIndex();
       await store.remove([indexKey, ...keys.map(entryKey)]);
       keys.length = 0;
+    },
+
+    async size() {
+      return (await loadIndex()).length;
     },
   };
 }

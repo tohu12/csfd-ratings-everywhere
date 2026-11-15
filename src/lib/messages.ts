@@ -9,6 +9,8 @@ export type BackgroundRequest =
   | { type: 'getRating'; id: number }
   | { type: 'peekRating'; id: number }
   | { type: 'clearCache' }
+  /** Options page: how many entries the caches hold. */
+  | { type: 'cacheSize' }
   /** A VOD detail view was opened (SPEC §4b): find the title on ČSFD, then its rating. */
   | ({ type: 'findTitle' } & TitleQuery);
 
@@ -40,6 +42,7 @@ export function isBackgroundRequest(value: unknown): value is BackgroundRequest 
       return typeof id === 'number' && Number.isSafeInteger(id) && id > 0;
     }
     case 'clearCache':
+    case 'cacheSize':
       return true;
     case 'findTitle':
       return isTitleQuery(value);

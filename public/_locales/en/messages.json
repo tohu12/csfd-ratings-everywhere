@@ -99,6 +99,14 @@
   "optionsClearCache": {
     "message": "Clear stored ratings"
   },
+  "optionsCacheSize": {
+    "message": "Cached: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "optionsCacheCleared": {
     "message": "Stored ratings cleared."
   },

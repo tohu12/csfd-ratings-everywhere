@@ -114,10 +114,41 @@ describe('startOptions', () => {
     expect($<HTMLTextAreaElement>('#disabled-hosts').value).toBe('a.cz\nb.cz\npopup.cz');
   });
 
-  it('clears the cache through the background', async () => {
+  it('clears the cache through the background and shows that it is empty again', async () => {
+    let stored = 42;
+    const send = vi.fn(async (message: { type: string }) => {
+      if (message.type === 'clearCache') {
+        stored = 0;
+        return true;
+      }
+      return message.type === 'cacheSize' ? stored : true;
+    });
+    deps.t = (key, ...subs) => `T:${key}(${subs.join(',')})`;
+    deps.sendToBackground = send as OptionsDeps['sendToBackground'];
     await startOptions(deps);
+    await vi.waitFor(() => expect($('#cache-size').textContent).toBe('T:optionsCacheSize(42)'));
+
     $('#clear-cache').click();
-    await vi.waitFor(() => expect($('#status').textContent).toBe('T:optionsCacheCleared'));
-    expect(deps.sendToBackground).toHaveBeenCalledWith({ type: 'clearCache' });
+    await vi.waitFor(() => expect($('#status').textContent).toBe('T:optionsCacheCleared()'));
+    expect(send).toHaveBeenCalledWith({ type: 'clearCache' });
+    await vi.waitFor(() => expect($('#cache-size').textContent).toBe('T:optionsCacheSize(0)'));
+  });
+
+  it('shows how many entries are stored', async () => {
+    const counts: string[] = [];
+    deps.t = (key, ...subs) => `T:${key}(${subs.join(',')})`;
+    deps.sendToBackground = vi.fn(async (message) =>
+      message.type === 'cacheSize' ? 7 : true,
+    ) as OptionsDeps['sendToBackground'];
+    await startOptions(deps);
+    await vi.waitFor(() => expect($('#cache-size').textContent).toBe('T:optionsCacheSize(7)'));
+    counts.push($('#cache-size').textContent ?? '');
+    expect(counts).toEqual(['T:optionsCacheSize(7)']);
+  });
+
+  it('says nothing about the cache when the background does not answer with a count', async () => {
+    deps.sendToBackground = vi.fn(async () => undefined) as OptionsDeps['sendToBackground'];
+    await startOptions(deps);
+    expect($('#cache-size').textContent).toBe('');
   });
 });

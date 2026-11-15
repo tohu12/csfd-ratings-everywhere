@@ -26,6 +26,7 @@ export const MESSAGE_KEYS = [
   'optionsDisabledHosts',
   'optionsDisabledHostsHint',
   'optionsClearCache',
+  'optionsCacheSize',
   'optionsCacheCleared',
   'optionsSaved',
   'optionsDisclaimer',

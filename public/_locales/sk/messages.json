@@ -99,6 +99,14 @@
   "optionsClearCache": {
     "message": "Vymazať uložené hodnotenia"
   },
+  "optionsCacheSize": {
+    "message": "Vo vyrovnávacej pamäti: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "optionsCacheCleared": {
     "message": "Uložené hodnotenia vymazané."
   },

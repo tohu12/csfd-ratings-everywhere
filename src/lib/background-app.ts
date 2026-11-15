@@ -112,6 +112,10 @@ export function createMessageHandler({
         });
       case 'clearCache':
         return Promise.all(caches.map((c) => c.clear())).then(() => true);
+      case 'cacheSize':
+        return Promise.all(caches.map((c) => c.size())).then((sizes) =>
+          sizes.reduce((total, size) => total + size, 0),
+        );
     }
   };
 }

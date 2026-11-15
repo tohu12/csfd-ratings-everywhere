@@ -112,7 +112,8 @@ Unofficial project, not affiliated with ČSFD.
   - `getRating` (cache, then network), sent automatically for the first 10 films per page or after a user action (§4),
   - `peekRating` (cache only),
   - `findTitle` (§4b): 1–2 well-formed titles of 1–200 characters, year 1800–2100 or null, kind `film`/`series` or null; answers `found` (id + rating), `unsure`, `blocked` or `error`,
-  - `clearCache` (ratings and lookups).
+  - `clearCache` (ratings and lookups),
+  - `cacheSize` (how many entries both caches hold, for the options page; entries past their TTL are dropped when read, so this counts what storage holds).
   - Every message is validated, and the sender must be this extension.
 - Requests go to `https://www.csfd.cz/film/<id>/prehled/` and, for §4b only, `https://www.csfd.cz/hledat/?q=<title>`, with default browser headers and the user's csfd.cz cookies, exactly like the user opening the link. Search requests share the backoff, rate limit and Anubis detection below.
 - **Forbidden:** circumventing ČSFD's bot protection (Anubis): no proof-of-work solving, no header spoofing, no hidden tabs/iframes/offscreen documents, no prefetching beyond §4.
@@ -159,7 +160,7 @@ Unofficial project, not affiliated with ČSFD.
   - global toggle,
   - number of ČSFD links on the current page,
   - link to options.
-- Options page: all settings + "Clear cache".
+- Options page: all settings + "Clear cache", which says how many entries are stored before and after.
 - Every change is a read-modify-write of the latest stored value, so the popup and options page never overwrite each other.
 - Changes apply on the next page load.
 

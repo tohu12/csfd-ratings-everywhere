@@ -28,7 +28,14 @@ export async function startOptions({
   const display = element(doc, '#display', HTMLSelectElement);
   const hosts = element(doc, '#disabled-hosts', HTMLTextAreaElement);
   const clearCache = element(doc, '#clear-cache', HTMLButtonElement);
+  const cacheSize = element(doc, '#cache-size', HTMLElement);
   const status = element(doc, '#status', HTMLElement);
+
+  /** How much is stored, so that "clear" says what it is about to throw away. */
+  const showCacheSize = async () => {
+    const count = await sendToBackground({ type: 'cacheSize' });
+    cacheSize.textContent = typeof count === 'number' ? t('optionsCacheSize', String(count)) : '';
+  };
 
   const settings = await loadSettings(store);
   enabled.checked = settings.enabled;
@@ -62,7 +69,9 @@ export async function startOptions({
   clearCache.addEventListener('click', async () => {
     await sendToBackground({ type: 'clearCache' });
     status.textContent = t('optionsCacheCleared');
+    await showCacheSize();
   });
+  await showCacheSize();
   // Disabled in the HTML until now: an earlier change would be overwritten by the stored settings.
   for (const control of [enabled, showRatings, display, hosts]) {
     control.disabled = false;

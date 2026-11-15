@@ -14,8 +14,14 @@ describe('createMessageHandler', () => {
     peekRating: vi.fn(async () => null),
     findTitle: vi.fn(async () => ({ status: 'unsure' }) as const),
   };
-  const cache = { clear: vi.fn(async () => {}) } as unknown as RatingCache;
-  const lookups = { clear: vi.fn(async () => {}) } as unknown as LookupCache;
+  const cache = {
+    clear: vi.fn(async () => {}),
+    size: vi.fn(async () => 12),
+  } as unknown as RatingCache;
+  const lookups = {
+    clear: vi.fn(async () => {}),
+    size: vi.fn(async () => 5),
+  } as unknown as LookupCache;
   const handle = createMessageHandler({ service, caches: [cache, lookups], runtimeId: 'self' });
 
   it('answers getRating from the service', async () => {
@@ -38,6 +44,10 @@ describe('createMessageHandler', () => {
     await expect(handle({ type: 'clearCache' }, SELF)).resolves.toBe(true);
     expect(cache.clear).toHaveBeenCalled();
     expect(lookups.clear).toHaveBeenCalled();
+  });
+
+  it('answers cacheSize with the entries of both caches', async () => {
+    await expect(handle({ type: 'cacheSize' }, SELF)).resolves.toBe(17);
   });
 
   it('ignores invalid messages and foreign senders', () => {

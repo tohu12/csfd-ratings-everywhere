@@ -99,6 +99,14 @@
   "optionsClearCache": {
     "message": "Vymazat uložená hodnocení"
   },
+  "optionsCacheSize": {
+    "message": "V mezipaměti: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
   "optionsCacheCleared": {
     "message": "Uložená hodnocení vymazána."
   },

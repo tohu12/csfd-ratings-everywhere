@@ -185,3 +185,28 @@ describe('isMatch', () => {
     expect(isMatch(value)).toBe(expected);
   });
 });
+
+describe('cache size', () => {
+  it('counts the stored entries of a rating cache and drops to zero when cleared', async () => {
+    const store = memoryStore();
+    const cache = createRatingCache({
+      store,
+      now: () => 0,
+      maxEntries: 10,
+      ttlMs: DEFAULT_TTL,
+    });
+    expect(await cache.size()).toBe(0);
+    await cache.set(1, { status: 'ok', percent: 80, count: 10, title: 'A' });
+    await cache.set(2, { status: 'none', title: 'B' });
+    expect(await cache.size()).toBe(2);
+    await cache.clear();
+    expect(await cache.size()).toBe(0);
+  });
+
+  it('does not count an answer that is never stored, such as a blocked page', async () => {
+    const store = memoryStore();
+    const cache = createRatingCache({ store, now: () => 0, maxEntries: 10, ttlMs: DEFAULT_TTL });
+    await cache.set(3, { status: 'blocked' });
+    expect(await cache.size()).toBe(0);
+  });
+});

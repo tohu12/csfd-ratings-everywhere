@@ -11,6 +11,7 @@ describe('isBackgroundRequest', () => {
     { type: 'getRating', id: 1 },
     { type: 'peekRating', id: 2 },
     { type: 'clearCache' },
+    { type: 'cacheSize' },
     { type: 'findTitle', titles: ['Duna'], year: 2021, kind: 'film' },
     { type: 'findTitle', titles: ['Špetka lásky', 'Salted Love'], year: null, kind: null },
     { type: 'findTitle', titles: ['Lupin'], year: 2026, kind: 'series' },
