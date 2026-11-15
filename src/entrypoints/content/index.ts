@@ -18,9 +18,10 @@ export default defineContentScript({
       settings,
       t: browserTranslator(),
       formatCount: (count) => numberFormat.format(count),
-      requestRating: (id) =>
+      // `async`: an orphaned script (extension update) makes `sendMessage` throw synchronously.
+      requestRating: async (id) =>
         browser.runtime.sendMessage({ type: 'getRating', id } satisfies BackgroundRequest),
-      peekRating: (id) =>
+      peekRating: async (id) =>
         browser.runtime.sendMessage({ type: 'peekRating', id } satisfies BackgroundRequest),
       isUserEvent: (event) => event.isTrusted,
       createIntersectionObserver: (callback) =>

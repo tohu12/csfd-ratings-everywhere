@@ -263,6 +263,29 @@ describe('vod content entrypoint', () => {
     vi.useRealTimers();
     expect(badge()).toBeNull();
   });
+
+  it('survives an extension update that orphans the script (SPEC §6)', async () => {
+    const page = new DOMParser().parseFromString(
+      fixture('pages/vod/netflix-film.html'),
+      'text/html',
+    );
+    document.title = page.title;
+    document.body.replaceChildren(document.importNode(page.body, true));
+    vi.stubGlobal('location', new URL('https://www.netflix.com/browse?jbv=814862'));
+    // An orphaned content script throws synchronously; it does not reject.
+    fakeBrowser.runtime.sendMessage = vi.fn(() => {
+      throw new Error('Extension context invalidated.');
+    }) as typeof fakeBrowser.runtime.sendMessage;
+    vi.stubGlobal('navigator', { ...navigator, userActivation: { hasBeenActive: true } });
+
+    const { default: vod } = await import('@/entrypoints/vod.content/index');
+    vi.useFakeTimers();
+    await vod.main({ onInvalidated: () => {} } as never);
+    await vi.advanceTimersByTimeAsync(300);
+    const badge = document.querySelector('[data-csfd-linker="badge"]');
+    await vi.waitFor(() => expect(badge?.shadowRoot?.textContent).toContain('ČSFD'));
+    vi.useRealTimers();
+  });
 });
 
 describe('popup entrypoint', () => {

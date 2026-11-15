@@ -26,7 +26,8 @@ export default defineContentScript({
       settings,
       t: browserTranslator(),
       formatCount: (count) => numberFormat.format(count),
-      findTitle: (query) =>
+      // `async`: an orphaned script (extension update) makes `sendMessage` throw synchronously.
+      findTitle: async (query) =>
         browser.runtime.sendMessage({ type: 'findTitle', ...query } satisfies BackgroundRequest),
       // Visually hidden headings are 1×1 px; those get the floating badge instead.
       isVisible: (el) => el.getBoundingClientRect().width > 1,
