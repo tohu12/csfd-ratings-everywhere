@@ -110,13 +110,16 @@ Unofficial; not affiliated with ČSFD.
 
 - Developer Hub: https://addons.mozilla.org/developers/addon/%C4%8Dsfd-ratings-everywhere/edit (slug `čsfd-ratings-everywhere`, add-on id `csfd-ratings-everywhere@tohu12.github.io`), developer name "ToHu12". Listed on AMO; Firefox and Firefox for Android.
 - Listing: descriptions in cs, sk and en-US (the summary comes from the manifest), category "Photos, Music & Videos", license MIT, support website = GitHub issues (no support e-mail), privacy policy = the text of `docs/PRIVACY.md`, the five en screenshots with the English captions from the Edge section.
-- "Do you need to submit source code?": **Yes**, attach `*-sources.zip`. Notes to reviewer (build steps + how to test):
+- "Do you need to submit source code?": **Yes**, attach `*-sources.zip`. Since 2026-11-15 AMO shows this step
+  *after* "Describe Version" (go to `…/versions/submit/<id>/source` if the flow jumps past it), and answering it
+  submits the version straight away, so the notes to reviewer are pasted afterwards under "Manage Version"
+  (`…/versions/<id>`, field "Notes to Reviewer" → "Save Changes"). Notes to reviewer (build steps + how to test):
 
 ```
 Build from source (the code is bundled by WXT/Vite, so the sources zip is attached to this version):
 1. Node 22 (see .nvmrc) and pnpm 11 (corepack enable).
 2. Unzip the sources and run: pnpm install --frozen-lockfile && pnpm build:firefox
-3. Output: .output/firefox-mv2 (identical to the uploaded package). Source repository: https://github.com/tohu12/csfd-ratings-everywhere (tag v1.3.5).
+3. Output: .output/firefox-mv2 (identical to the uploaded package). Source repository: https://github.com/tohu12/csfd-ratings-everywhere (tag v1.3.6).
 
 How to test (no account needed):
 1. Open any page that links to ČSFD (csfd.cz, the Czech film database), e.g. https://github.com/tohu12/csfd-ratings-everywhere - a small badge with the film's ČSFD rating (e.g. 72 %) appears next to the ČSFD film link; hover it for the title and number of ratings. Plain-text ČSFD film URLs become clickable links.
