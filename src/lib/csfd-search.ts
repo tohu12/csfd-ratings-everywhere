@@ -28,6 +28,35 @@ export function lookupKey({ titles, year, kind }: TitleQuery): string {
   return [names, year ?? '', kind ?? ''].join('|');
 }
 
+/**
+ * A studio label a service puts in front of the real name: Disney+ shows "Marvel Studios'
+ * Avengers: Endgame" and "Marvel's Daredevil", while ČSFD knows both without the label. The
+ * label must end in one of these words, so a possessive that belongs to the name ("Ocean's
+ * Eleven", "The Handmaid's Tale", "Dante's Peak") is never cut off.
+ */
+const STUDIO_PREFIX =
+  /^(?:\p{Lu}[\p{L}.&-]*\s+){0,3}(?:Studios?|Television|Pictures|Animation|Films?|Productions?|Entertainment|Disney|Marvel|Pixar|Lucasfilm)['\u2019\u02bc]s?\s+/u;
+/** SPEC §4b: an uncached title costs at most two searches plus the film page. */
+const MAX_SEARCHES = 2;
+
+/**
+ * What to search ČSFD for: every detected title without its studio label first, then the names
+ * as the page shows them. Searching the real name first costs one request instead of two, and
+ * keeping the page's own name as a fallback covers a title that carries the label on ČSFD too.
+ */
+export function searchTerms({ titles }: TitleQuery): string[] {
+  const seen = new Set<string>();
+  const terms = [...titles.map((t) => t.replace(STUDIO_PREFIX, '')), ...titles].flatMap((term) => {
+    const key = normalizeTitle(term);
+    if (!key || seen.has(key)) {
+      return [];
+    }
+    seen.add(key);
+    return [term];
+  });
+  return terms.slice(0, MAX_SEARCHES);
+}
+
 /** Lone surrogates (a cut emoji) are replaced: `encodeURIComponent` would throw on them. */
 export function searchUrl(title: string): string {
   return `https://www.csfd.cz/hledat/?q=${encodeURIComponent(title.toWellFormed())}`;

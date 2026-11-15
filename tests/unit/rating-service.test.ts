@@ -267,6 +267,23 @@ describe('findTitle', () => {
     expect(s.fetchSpy).toHaveBeenCalledTimes(3);
   });
 
+  it('searches without the studio label first (Disney+ marketing names)', async () => {
+    const query = { titles: ["Marvel Studios' Duna"], year: 2021, kind: 'film' } as const;
+    expect(await s.service.findTitle(query)).toMatchObject({ status: 'found', id: 1234 });
+    expect(s.fetchSpy.mock.calls.map(([url]) => url)).toEqual([
+      'https://www.csfd.cz/hledat/?q=Duna',
+      'https://www.csfd.cz/film/1234/prehled/',
+    ]);
+  });
+
+  it('never trims a possessive that belongs to the name, so no other film can match', async () => {
+    const query = { titles: ["Duna's Duna"], year: 2021, kind: 'film' } as const;
+    expect(await s.service.findTitle(query)).toEqual({ status: 'unsure' });
+    expect(s.fetchSpy.mock.calls.map(([url]) => url)).toEqual([
+      "https://www.csfd.cz/hledat/?q=Duna's%20Duna",
+    ]);
+  });
+
   it('is unsure when no title finds anything', async () => {
     expect(await s.service.findTitle({ ...DUNA, titles: ['Nic', 'Nothing'] })).toEqual({
       status: 'unsure',

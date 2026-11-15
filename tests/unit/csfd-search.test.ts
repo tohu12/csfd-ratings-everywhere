@@ -5,6 +5,7 @@ import {
   parseSearchPage,
   pickMatch,
   searchPageState,
+  searchTerms,
   searchUrl,
 } from '@/lib/csfd-search';
 import { fixture } from '../helpers/fixtures';
@@ -232,5 +233,58 @@ describe('lookupKey', () => {
     expect(
       lookupKey({ titles: ['a'.repeat(200), 'b'.repeat(200)], year: 2021, kind: 'film' }),
     ).toBe(`${'a'.repeat(120)}|2021|film`);
+  });
+});
+
+describe('searchTerms', () => {
+  const query = (titles: string[]) => ({ titles, year: 2019, kind: 'film' }) as const;
+
+  it('searches the detected titles as they are when none carries a studio label', () => {
+    expect(searchTerms(query(['Duna', 'Dune']))).toEqual(['Duna', 'Dune']);
+  });
+
+  it('searches the real name first (Disney+ shows "Marvel Studios\' Avengers: Endgame")', () => {
+    expect(searchTerms(query(["Marvel Studios' Avengers: Endgame"]))).toEqual([
+      'Avengers: Endgame',
+      "Marvel Studios' Avengers: Endgame",
+    ]);
+  });
+
+  it('drops a one-word studio label and a typographic apostrophe', () => {
+    expect(searchTerms(query(['Marvel\u2019s Daredevil']))).toEqual([
+      'Daredevil',
+      'Marvel\u2019s Daredevil',
+    ]);
+  });
+
+  it('drops the label from both titles when the document title carries it too', () => {
+    expect(
+      searchTerms(query(["Marvel Studios' Tajná invaze", "Marvel Studios' Secret Invasion"])),
+    ).toEqual(['Tajná invaze', 'Secret Invasion']);
+  });
+
+  it('keeps a possessive that belongs to the name', () => {
+    for (const title of [
+      "Ocean's Eleven",
+      "A Bug's Life",
+      "The Handmaid's Tale",
+      "Dante's Peak",
+      "It's a Wonderful Life",
+      "Rock 'n' Roll",
+      "L'amour fou",
+    ]) {
+      expect(searchTerms(query([title]))).toEqual([title]);
+    }
+  });
+
+  it('never sends more than two searches', () => {
+    expect(searchTerms(query(["Marvel Studios' Loki", 'Loki (seriál)']))).toEqual([
+      'Loki',
+      'Loki (seriál)',
+    ]);
+  });
+
+  it('ignores a label that leaves nothing behind', () => {
+    expect(searchTerms(query(["Marvel Studios' "]))).toEqual(["Marvel Studios' "]);
   });
 });

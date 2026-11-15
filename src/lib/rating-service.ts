@@ -6,6 +6,7 @@ import {
   parseSearchPage,
   pickMatch,
   searchPageState,
+  searchTerms,
   searchUrl,
   type TitleQuery,
 } from './csfd-search';
@@ -170,9 +171,13 @@ export function createRatingService({
     }
   };
 
-  /** Searches the on-page title first, the document title only when that finds nothing. */
+  /**
+   * Searches the on-page title first, then the next term (the document title, or the title
+   * without its studio prefix) only when that finds nothing. A term only matches results that
+   * carry its own name, so a derived name never decides an earlier search.
+   */
   const search = async (query: TitleQuery): Promise<Match | 'blocked' | 'error'> => {
-    for (const title of query.titles) {
+    for (const title of searchTerms(query)) {
       if (await backoff.isBlocked()) {
         return 'blocked';
       }
@@ -185,7 +190,7 @@ export function createRatingService({
       }
       const candidates = parseSearchPage(response.text);
       await settle(backoff.reset(), recordSearch(response.text));
-      const match = pickMatch(query, candidates);
+      const match = pickMatch({ ...query, titles: [...query.titles, title] }, candidates);
       if (match !== 'notfound') {
         return match;
       }

@@ -68,9 +68,9 @@ Unofficial project, not affiliated with ČSFD.
   - the user has interacted with the page (`navigator.userActivation.hasBeenActive`, which page scripts cannot fake and which resets on every page load); opening a detail view is that interaction on all supported sites,
   - fewer than **30** lookups were sent on this page load.
   - Browse rows, tiles and hover previews never trigger anything. Reopening a title reuses its answer; an `error` or `blocked` answer is not reused, so reopening retries.
-  - Background: lookup cache → ČSFD search for the first title → the second title only if the first finds no match → the film page via `getRating` (cache first). An uncached title costs at most 3 requests.
+  - Background: lookup cache → ČSFD search for the first term → the next term only if that finds no match → the film page via `getRating` (cache first). The terms are the detected titles without their studio label, then the titles as the page shows them (Disney+ shows "Marvel Studios' Avengers: Endgame" and "Marvel's Daredevil", which ČSFD knows without the label). A label is only dropped when it ends in a studio word (Studios, Television, Pictures, Animation, Films, Productions, Entertainment) or a known brand (Disney, Marvel, Pixar, Lucasfilm) followed by an apostrophe, so a possessive belonging to the name ("Ocean's Eleven", "The Handmaid's Tale") is never cut off. At most two searches are sent, so an uncached title still costs at most 3 requests.
 - **Matching:**
-  - exact title after normalisation (case, diacritics, punctuation, bidi marks), against the Czech or the original ČSFD name,
+  - exact title after normalisation (case, diacritics, punctuation, bidi marks), against the Czech or the original ČSFD name. A search accepts the detected titles and the term it was sent with, so a name derived by dropping a studio label never decides the results of another search,
   - film: year ±1; series: ČSFD start year ≤ the VOD year (VOD sites show the latest season's year); a candidate without a year never fits,
   - kind must agree when both sides know it (ČSFD results without a type label are films; unknown labels leave the kind open),
   - several fits → the one with the exact year if unique,
