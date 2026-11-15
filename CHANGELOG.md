@@ -4,6 +4,8 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+## 1.3.6 – 2026-11-15
+
 ### Added
 - Settings: the "clear stored ratings" button now says how many entries are stored.
 
