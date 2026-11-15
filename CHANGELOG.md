@@ -4,6 +4,13 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 
 ## Unreleased
 
+### Added
+- Settings: the "clear stored ratings" button now says how many entries are stored.
+
+### Fixed
+- Streaming services that put the studio in the title, such as Disney+ with "Marvel Studios' Avengers: Endgame", now get a rating: ČSFD is searched for the name without the studio label.
+- After the extension updated, pages left open could log "Extension context invalidated" until they were reloaded.
+
 ## 1.3.5 – 2026-11-08
 
 ### Changed
